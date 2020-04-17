@@ -1,1 +1,1 @@
-from .sitemap import *
+from .sitemap import *  # NOQA
