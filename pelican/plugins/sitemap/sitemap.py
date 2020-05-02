@@ -5,14 +5,13 @@ Sitemap
 
 The sitemap plugin generates plain-text or XML sitemaps.
 """
-import os.path
-import re
 from datetime import datetime
 from logging import info, warning
+import os.path
+import re
 from urllib.request import pathname2url
 
 from pelican import contents, signals
-
 
 XML_FILE_TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
