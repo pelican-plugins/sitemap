@@ -78,7 +78,7 @@ def content_written(path, context):
 
     def is_excluded(url, obj):
         is_private = getattr(obj, 'private', '') in ('True', 'true', '1')
-        is_hidden = not (getattr(obj, 'status', 'published') == 'published')
+        is_hidden = not getattr(obj, 'status', 'published') == 'published'
         excluded = context.get("SITEMAP", {}).get('exclude', ())
         return (is_private or is_hidden or
                 any(re.match(pattern, url) for pattern in excluded))
@@ -103,7 +103,6 @@ def content_written(path, context):
                        datetime.combine(datetime.now(), datetime.min.time()))
             content_type = {contents.Article: 'articles',
                             contents.Page: 'pages'}.get(type(obj), 'indexes')
-            print(type(obj), obj)
             changefreq = (context.get('SITEMAP', {})
                           .get('changefreqs', {})
                           .get(content_type,
