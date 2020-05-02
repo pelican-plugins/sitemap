@@ -20,8 +20,7 @@ from pytz import timezone
 from pelican import contents, signals
 from pelican.utils import get_date
 
-TXT_HEADER = """{0}/index.html
-"""
+TXT_HEADER = ""
 
 XML_HEADER = """<?xml version="1.0" encoding="utf-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
