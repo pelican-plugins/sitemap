@@ -5,10 +5,10 @@ Sitemap
 
 The sitemap plugin generates plain-text or XML sitemaps.
 """
-from datetime import datetime
-from logging import info, warning
 import os.path
 import re
+from datetime import datetime
+from logging import info, warning
 from urllib.request import pathname2url
 
 from pelican import contents, signals
