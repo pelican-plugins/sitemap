@@ -129,11 +129,8 @@ class SitemapGenerator:
                 or any(re.match(pattern, url) for pattern in excluded)
             )
 
-        page_queue = [(to_url(path), obj) for path, obj in self.page_queue]
-        # Clean after filtering, because that was the way before, sort
-        page_queue = sorted(
-            (clean_url(url), obj) for url, obj in filterfalse(is_excluded, page_queue)
-        )
+        page_queue = [(clean_url(to_url(path)), obj) for path, obj in self.page_queue]
+        page_queue = sorted(filterfalse(is_excluded, page_queue))
 
         with open(filename, "w", encoding="utf-8") as fd:
             if is_xml:
