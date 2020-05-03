@@ -246,11 +246,16 @@ class SitemapGenerator(object):
                 standard_page_save_as = self.context.get(
                     "{}_SAVE_AS".format(standard_page.upper())
                 )
+
+                # No save _SAVE_AS field means no output file. Skip.
+                if not standard_page_save_as:
+                    continue
+
                 fake = FakePage(
                     status="published",
                     date=self.now,
                     url=standard_page_url or "{}.html".format(standard_page),
-                    save_as=standard_page_save_as or "{}.html".format(standard_page),
+                    save_as=standard_page_save_as,
                 )
                 self.write_url(fake, fd)
 
