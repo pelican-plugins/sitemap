@@ -17,6 +17,7 @@ from pelican import contents, signals
 XML_HEADER = """<?xml version="1.0" encoding="utf-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd"
+xmlns:xhtml="http://www.w3.org/1999/xhtml"
 xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 """
 
@@ -26,7 +27,10 @@ XML_URL = """
 <lastmod>{2}</lastmod>
 <changefreq>{3}</changefreq>
 <priority>{4}</priority>
-</url>
+{translations}</url>
+"""
+
+XML_TRANSLATION = """<xhtml:link rel="alternate" hreflang="{}" ref="{}/{}"/>
 """
 
 XML_FOOTER = """
@@ -155,6 +159,15 @@ class SitemapGenerator:
                 )
                 changefreq = changefreqs[content_type]
                 priority = float(priorities[content_type])
+                translations = "".join(
+                    XML_TRANSLATION.format(
+                        trans.lang,
+                        siteurl,
+                        # save_as path is already output-relative
+                        clean_url(pathname2url(trans.save_as)),
+                    )
+                    for trans in getattr(obj, "translations", ())
+                )
 
                 fd.write(
                     XML_URL.format(
@@ -163,6 +176,7 @@ class SitemapGenerator:
                         lastmod,
                         changefreq,
                         priority,
+                        translations=translations,
                     )
                 )
 
