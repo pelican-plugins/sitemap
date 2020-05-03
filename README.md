@@ -1,7 +1,7 @@
 Sitemap
 =======
 
-[![Build Status](https://img.shields.io/github/workflow/status/pelican-plugins/sitemap/build)](https://github.com/pelican-plugins/sitemap/actions)
+[![Build Status](https://img.shields.io/github/workflow/status/pelican-plugins/sitemap/build)](https://github.com/pelican-plugins/sitemap/actions) [![PyPI Version](https://img.shields.io/pypi/v/pelican-sitemap)](https://pypi.org/project/pelican-sitemap/)
 
 This [Pelican][] plugin generates a site map in plain-text or XML format. You can use the `SITEMAP` variable in your settings file to configure the behavior of the plugin.
 
