@@ -6,47 +6,32 @@ Sitemap
 The sitemap plugin generates plain-text or XML sitemaps.
 """
 from datetime import datetime
-from logging import info, warning
+from itertools import filterfalse
+import logging as log
 import os.path
 import re
 from urllib.request import pathname2url
 
 from pelican import contents, signals
 
-XML_FILE_TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
+XML_HEADER = """<?xml version="1.0" encoding="utf-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd"
-        xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-{}
-</urlset>
+xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd"
+xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 """
 
-
-XML_URL_TEMPLATE = """
+XML_URL = """
 <url>
-<loc>{loc}</loc>
-<lastmod>{lastmod}</lastmod>
-<changefreq>{changefreq}</changefreq>
-<priority>{priority}</priority>
+<loc>{0}/{1}</loc>
+<lastmod>{2}</lastmod>
+<changefreq>{3}</changefreq>
+<priority>{4}</priority>
 </url>
 """
 
-
-VALID_CHANGEFREQS = (
-    "always",
-    "hourly",
-    "daily",
-    "weekly",
-    "monthly",
-    "yearly",
-    "never",
-)
-
-
-CHANGEFREQ_DEFAULTS = dict(articles="monthly", pages="monthly", indexes="daily",)
-
-
-PRIORITY_DEFAULTS = dict(articles=0.5, pages=0.5, indexes=0.5,)
+XML_FOOTER = """
+</urlset>
+"""
 
 
 def format_date(date):
@@ -58,104 +43,167 @@ def format_date(date):
     return date.strftime("%Y-%m-%dT%H:%M:%S") + tz
 
 
-def _get_format(settings):
-    fmt = settings.get("SITEMAP", {}).get("format", "xml")
-    assert fmt in ("txt", "xml")
-    return fmt
+class SitemapGenerator:
+    CHANGEFREQ_DEFAULTS = {
+        "articles": "monthly",
+        "pages": "monthly",
+        "indexes": "daily",
+    }
+    PRIORITY_DEFAULTS = {
+        "articles": 0.5,
+        "pages": 0.5,
+        "indexes": 0.5,
+    }
+    CHANGEFREQ_VALUES = {
+        "always",
+        "hourly",
+        "daily",
+        "weekly",
+        "monthly",
+        "yearly",
+        "never",
+    }
 
+    def __init__(self):
+        self.now = datetime.now()
+        self.pelican_finalized = {}
+        self.page_queue = []
 
-def content_written(path, context):
-    rel_url = pathname2url(os.path.relpath(path, context["OUTPUT_PATH"]))
-    obj = context.get("article") or context.get("page")
+    def init(self, pelican):
+        log.debug("sitemap: Initialize")
+        self.pelican_finalized[pelican] = False
 
-    def is_excluded(url, obj):
-        is_private = getattr(obj, "private", "") in ("True", "true", "1")
-        is_hidden = not getattr(obj, "status", "published") == "published"
-        excluded = context.get("SITEMAP", {}).get("exclude", ())
-        return (
-            is_private
-            or is_hidden
-            or any(re.match(pattern, url) for pattern in excluded)
+    def queue_page(self, path, context):
+        obj = context.get("article") or context.get("page")
+        self.page_queue.append((path, obj))
+
+    def finalize(self, pelican):
+        self.pelican_finalized[pelican] = True
+
+        # Wait for all i18n_subsites to finish
+        if all(self.pelican_finalized.values()):
+            self._write_out()
+
+    def _write_out(self):
+        log.debug("sitemap: Writing sitemap")
+        default_pelican = min(
+            self.pelican_finalized.keys(), key=lambda pelican: len(pelican.output_path)
+        )
+        output_path = default_pelican.output_path
+        assert all(
+            output_path == os.path.commonprefix((output_path, p.output_path))
+            for p in self.pelican_finalized.keys()
+        ), "not all output paths under same root dir ?!?!"
+        context = default_pelican.settings
+        siteurl = context["SITEURL"]
+        config = context.get("SITEMAP", {})
+        self._check_config(config)
+        excluded = config.get("exclude", ())
+        changefreqs = dict(self.CHANGEFREQ_DEFAULTS, **config.get("changefreqs", {}))
+        priorities = dict(self.PRIORITY_DEFAULTS, **config.get("priorities", {}))
+        fmt = config.get("format", "xml")
+        is_xml = fmt == "xml"
+        filename = os.path.join(output_path, "sitemap." + fmt)
+        self.page_queue.sort()
+
+        def to_url(path):
+            nonlocal output_path
+            return pathname2url(os.path.relpath(path, output_path))
+
+        def clean_url(url):
+            # Strip trailing 'index.html'
+            return re.sub(r"(?:^|(?<=/))index.html$", "", url)
+
+        def is_excluded(item):
+            nonlocal excluded
+            url, obj = item
+            is_private = getattr(obj, "private", "") == "True"
+            is_hidden = not getattr(obj, "status", "published") == "published"
+            return (
+                is_private
+                or is_hidden
+                or any(re.match(pattern, url) for pattern in excluded)
+            )
+
+        page_queue = [(to_url(path), obj) for path, obj in self.page_queue]
+        # Clean after filtering, because that was the way before, sort
+        page_queue = sorted(
+            (clean_url(url), obj) for url, obj in filterfalse(is_excluded, page_queue)
         )
 
-    if is_excluded(rel_url, obj):
-        return
+        with open(filename, "w", encoding="utf-8") as fd:
+            if is_xml:
+                fd.write(XML_HEADER)
 
-    abs_url = context["SITEURL"] + "/" + rel_url
-    if abs_url.endswith("/index.html"):
-        abs_url = abs_url[: -len("index.html")]
+            for pageurl, obj in page_queue:
+                if not is_xml:
+                    fd.write(siteurl + "/" + pageurl + "\n")
+                    # That's it for txt. Short circuit the loop, gain an indent level.
+                    continue
 
-    fmt = _get_format(context)
-    filename = os.path.join(context["OUTPUT_PATH"], "sitemap." + fmt)
-
-    with open(filename, "a") as file:
-        if fmt == "txt":
-            file.write(abs_url + "\n")
-
-        elif fmt == "xml":
-            lastmod = (
-                getattr(obj, "modified", None)
-                or getattr(obj, "date", None)
-                or datetime.combine(datetime.now(), datetime.min.time())
-            )
-            content_type = {contents.Article: "articles", contents.Page: "pages"}.get(
-                type(obj), "indexes"
-            )
-            changefreq = (
-                context.get("SITEMAP", {})
-                .get("changefreqs", {})
-                .get(content_type, CHANGEFREQ_DEFAULTS[content_type])
-            )
-            assert changefreq in VALID_CHANGEFREQS
-            priority = float(
-                context.get("SITEMAP", {})
-                .get("priorities", {})
-                .get(content_type, PRIORITY_DEFAULTS[content_type])
-            )
-            file.write(
-                XML_URL_TEMPLATE.format(
-                    loc=abs_url,
-                    lastmod=format_date(lastmod),
-                    changefreq=changefreq,
-                    priority=priority,
+                lastmod = format_date(
+                    getattr(obj, "modified", None)
+                    or getattr(obj, "date", None)
+                    or self.now
                 )
+                content_type = (
+                    "articles"
+                    if isinstance(obj, contents.Article)
+                    else "pages"
+                    if isinstance(obj, contents.Page)
+                    else "indexes"
+                )
+                changefreq = changefreqs[content_type]
+                priority = float(priorities[content_type])
+
+                fd.write(
+                    XML_URL.format(
+                        siteurl,
+                        pageurl,
+                        lastmod,
+                        changefreq,
+                        priority,
+                    )
+                )
+
+            if is_xml:
+                fd.write(XML_FOOTER)
+
+        log.info("sitemap: Written {!r}".format(filename))
+
+    def _check_config(self, config):
+        if not isinstance(config, dict):
+            log.error("sitemap: The SITEMAP setting must be a dict")
+        for key in config.keys():
+            if key not in ("format", "exclude", "priorities", "changefreqs"):
+                log.error("sitemap: Invalid 'SITEMAP' key: {!r}".format(key))
+        changefreqs = config.get("changefreqs", {})
+        for key, value in changefreqs.items():
+            if key not in self.CHANGEFREQ_DEFAULTS:
+                log.error("sitemap: Invalid 'changefreqs' key: {!r}".format(key))
+            if value not in self.CHANGEFREQ_VALUES:
+                log.error("sitemap: Invalid 'changefreqs' value: {!r}".format(value))
+        for key, value in config.get("priorities", {}).items():
+            if key not in self.PRIORITY_DEFAULTS:
+                log.error("sitemap: Invalid 'priorities' key: {!r}".format(key))
+        fmt = config.get("format")
+        if fmt not in (None, "txt", "xml"):
+            log.error(
+                "sitemap: Invalid 'format' value: {!r}; ",
+                "must be 'txt' or 'xml'".format(fmt),
+            )
+        exclude = config.get("exclude", ())
+        if not all(isinstance(i, str) for i in exclude):
+            log.error(
+                "sitemap: Invalid 'exclude' value: {!r}; ",
+                "must be a list of str".format(exclude),
             )
 
 
-def _check_config(settings):
-    config = settings.get("SITEMAP", {})
-    for key in config.keys():
-        if key not in ("format", "exclude", "priorities", "changefreqs"):
-            warning("sitemap: Invalid 'SITEMAP' key: {!r}".format(key))
-    for key in config.get("changefreqs", {}).keys():
-        if key not in CHANGEFREQ_DEFAULTS:
-            warning("sitemap: Invalid 'changefreqs' key: {!r}".format(key))
-    for key in config.get("priorities", {}).keys():
-        if key not in PRIORITY_DEFAULTS:
-            warning("sitemap: Invalid 'priorities' key: {!r}".format(key))
-
-
-def initialize(pelican):
-    _check_config(pelican.settings)
-    fmt = _get_format(pelican.settings)
-    filename = os.path.join(pelican.output_path, "sitemap." + fmt)
-    with open(filename, "w") as f:
-        f.truncate()
-
-
-def finalize(pelican):
-    fmt = _get_format(pelican.settings)
-    filename = os.path.join(pelican.output_path, "sitemap." + fmt)
-    if fmt == "xml":
-        with open(filename, "r+") as f:
-            contents = f.read()
-            f.seek(0)
-            f.truncate()
-            f.write(XML_FILE_TEMPLATE.format(contents))
-    info("sitemap: written {!r}".format(filename))
+generator = SitemapGenerator()
 
 
 def register():
-    signals.content_written.connect(content_written)
-    signals.initialized.connect(initialize)
-    signals.finalized.connect(finalize)
+    signals.initialized.connect(generator.init)
+    signals.content_written.connect(generator.queue_page)
+    signals.finalized.connect(generator.finalize)
