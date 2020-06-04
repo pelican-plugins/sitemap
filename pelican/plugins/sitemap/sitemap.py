@@ -108,7 +108,8 @@ class SitemapGenerator:
         fmt = config.get("format", "xml")
         is_xml = fmt == "xml"
         filename = os.path.join(output_path, "sitemap." + fmt)
-        self.page_queue.sort()
+        # Sort by paths; don't break ties to avoid error comparing Page and None
+        self.page_queue.sort(key=lambda i: i[0])
 
         def to_url(path):
             nonlocal output_path
@@ -130,7 +131,7 @@ class SitemapGenerator:
             )
 
         page_queue = [(clean_url(to_url(path)), obj) for path, obj in self.page_queue]
-        page_queue = sorted(filterfalse(is_excluded, page_queue))
+        page_queue = [page for page in page_queue if not is_excluded(page)]
 
         with open(filename, "w", encoding="utf-8") as fd:
             if is_xml:
