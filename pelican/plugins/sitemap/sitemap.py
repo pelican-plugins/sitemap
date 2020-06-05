@@ -6,12 +6,14 @@ Sitemap
 The sitemap plugin generates plain-text or XML sitemaps.
 """
 from datetime import datetime
-import logging as log
+import logging
 import os.path
 import re
 from urllib.request import pathname2url
 
 from pelican import contents, signals
+
+log = logging.getLogger(__name__)
 
 XML_HEADER = """<?xml version="1.0" encoding="utf-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
