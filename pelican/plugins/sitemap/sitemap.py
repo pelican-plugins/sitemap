@@ -200,14 +200,13 @@ class SitemapGenerator:
         fmt = config.get("format")
         if fmt not in (None, "txt", "xml"):
             log.error(
-                "sitemap: Invalid 'format' value: %r; "
-                "must be 'txt' or 'xml'", fmt,
+                "sitemap: Invalid 'format' value: %r; " "must be 'txt' or 'xml'", fmt,
             )
         exclude = config.get("exclude", ())
         if not all(isinstance(i, str) for i in exclude):
             log.error(
-                "sitemap: Invalid 'exclude' value: %r; "
-                "must be a list of str", exclude,
+                "sitemap: Invalid 'exclude' value: %r; " "must be a list of str",
+                exclude,
             )
 
 
