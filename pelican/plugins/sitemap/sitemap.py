@@ -6,7 +6,6 @@ Sitemap
 The sitemap plugin generates plain-text or XML sitemaps.
 """
 from datetime import datetime
-from itertools import filterfalse
 import logging as log
 import os.path
 import re
@@ -201,14 +200,14 @@ class SitemapGenerator:
         fmt = config.get("format")
         if fmt not in (None, "txt", "xml"):
             log.error(
-                "sitemap: Invalid 'format' value: {!r}; ",
-                "must be 'txt' or 'xml'".format(fmt),
+                "sitemap: Invalid 'format' value: %r; "
+                "must be 'txt' or 'xml'", fmt,
             )
         exclude = config.get("exclude", ())
         if not all(isinstance(i, str) for i in exclude):
             log.error(
-                "sitemap: Invalid 'exclude' value: {!r}; ",
-                "must be a list of str".format(exclude),
+                "sitemap: Invalid 'exclude' value: %r; "
+                "must be a list of str", exclude,
             )
 
 
