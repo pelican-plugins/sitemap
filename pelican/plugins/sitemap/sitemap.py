@@ -71,35 +71,31 @@ class SitemapGenerator:
 
     def __init__(self):
         self.now = datetime.now()
-        self.pelican_finalized = {}
         self.page_queue = []
+        self._main_pelican = None
 
     def init(self, pelican):
         log.debug("sitemap: Initialize")
-        self.pelican_finalized[pelican] = False
+        if self._main_pelican is None:
+            self._main_pelican = pelican
 
     def queue_page(self, path, context):
         obj = context.get("article") or context.get("page")
         self.page_queue.append((path, obj))
 
     def finalize(self, pelican):
-        self.pelican_finalized[pelican] = True
-
         # Wait for all i18n_subsites to finish
-        if all(self.pelican_finalized.values()):
-            self._write_out()
+        # https://github.com/pelican-plugins/sitemap/pull/3#discussion_r436390684
+        if pelican == self._main_pelican:
+            self._write_out(pelican)
+            # Reset for autoreload
+            self._main_pelican = None
+            self.page_queue = []
 
-    def _write_out(self):
-        log.debug("sitemap: Writing sitemap")
-        default_pelican = min(
-            self.pelican_finalized.keys(), key=lambda pelican: len(pelican.output_path)
-        )
-        output_path = default_pelican.output_path
-        assert all(
-            output_path == os.path.commonprefix((output_path, p.output_path))
-            for p in self.pelican_finalized.keys()
-        ), "not all output paths under same root dir ?!?!"
-        context = default_pelican.settings
+    def _write_out(self, pelican):
+        output_path = pelican.output_path
+        log.debug("sitemap: Writing sitemap to %r", output_path)
+        context = pelican.settings
         siteurl = context["SITEURL"]
         config = context.get("SITEMAP", {})
         self._check_config(config)
@@ -109,8 +105,6 @@ class SitemapGenerator:
         fmt = config.get("format", "xml")
         is_xml = fmt == "xml"
         filename = os.path.join(output_path, "sitemap." + fmt)
-        # Sort by paths; don't break ties to avoid error comparing Page and None
-        self.page_queue.sort(key=lambda i: i[0])
 
         def to_url(path):
             nonlocal output_path
@@ -133,6 +127,7 @@ class SitemapGenerator:
 
         page_queue = [(clean_url(to_url(path)), obj) for path, obj in self.page_queue]
         page_queue = [page for page in page_queue if not is_excluded(page)]
+        page_queue.sort(key=lambda i: i[0])
 
         with open(filename, "w", encoding="utf-8") as fd:
             if is_xml:
@@ -216,6 +211,9 @@ generator = SitemapGenerator()
 
 
 def register():
-    signals.initialized.connect(generator.init)
+    # We connect to get_generators (instead of e.g. initialized)
+    # because i18n_subsites does, so the whole thing works with
+    # pelican --autoreload
+    signals.get_generators.connect(generator.init)
     signals.content_written.connect(generator.queue_page)
     signals.finalized.connect(generator.finalize)
