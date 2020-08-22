@@ -10,7 +10,7 @@ Installation
 
 This plugin can be installed via:
 
-    pip install pelican-sitemap
+    python -m pip install pelican-sitemap
 
 Usage
 -----

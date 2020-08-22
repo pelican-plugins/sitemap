@@ -42,9 +42,7 @@ def isort(c, check=False, diff=False):
         check_flag = "-c"
     if diff:
         diff_flag = "--diff"
-    c.run(
-        f"{VENV}/bin/isort {check_flag} {diff_flag} --recursive {PKG_PATH}/* tasks.py"
-    )
+    c.run(f"{VENV}/bin/isort {check_flag} {diff_flag} .")
 
 
 @task
