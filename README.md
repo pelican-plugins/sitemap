@@ -1,7 +1,7 @@
 Sitemap
 =======
 
-[![Build Status](https://img.shields.io/github/workflow/status/pelican-plugins/sitemap/build)](https://github.com/pelican-plugins/sitemap/actions) [![PyPI Version](https://img.shields.io/pypi/v/pelican-sitemap)](https://pypi.org/project/pelican-sitemap/)
+[![Build Status](https://img.shields.io/github/workflow/status/pelican-plugins/sitemap/build)](https://github.com/pelican-plugins/sitemap/actions) [![PyPI Version](https://img.shields.io/pypi/v/pelican-sitemap)](https://pypi.org/project/pelican-sitemap/) ![License](https://img.shields.io/pypi/l/pelican-sitemap?color=blue)
 
 This [Pelican][] plugin generates a site map in plain-text or XML format. You can use the `SITEMAP` variable in your settings file to configure the behavior of the plugin.
 
@@ -89,3 +89,8 @@ To start contributing to this plugin, review the [Contributing to Pelican][] doc
 [Pelican]: https://github.com/getpelican/pelican
 [existing issues]: https://github.com/pelican-plugins/sitemap/issues
 [Contributing to Pelican]: https://docs.getpelican.com/en/latest/contribute.html
+
+License
+-------
+
+This project is licensed under the [AGPL-3.0](http://www.gnu.org/licenses/agpl-3.0-standalone.html) license.
