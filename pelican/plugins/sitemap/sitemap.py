@@ -86,8 +86,8 @@ class SitemapGenerator(object):
             self.sitemapExclude = config.get("exclude", [])
 
             if fmt not in ("xml", "txt"):
-                warning("sitemap plugin: SITEMAP['format'] must be `txt' or `xml'")
-                warning("sitemap plugin: Setting SITEMAP['format'] on `xml'")
+                warning("sitemap plugin: SITEMAP['format'] must be 'txt' or 'xml'")
+                warning("sitemap plugin: Setting SITEMAP['format'] to 'xml'")
             elif fmt == "txt":
                 self.format = fmt
                 return
@@ -124,7 +124,7 @@ class SitemapGenerator(object):
                 for k, v in chfreqs.items():
                     if k in valid_keys and v not in valid_chfreqs:
                         default = self.changefreqs[k]
-                        warning("sitemap plugin: invalid changefreq `{0}'".format(v))
+                        warning("sitemap plugin: invalid changefreq '{0}'".format(v))
                         warning(
                             "sitemap plugin: setting SITEMAP['changefreqs']"
                             "['{0}'] on '{1}'".format(k, default)
