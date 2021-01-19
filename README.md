@@ -60,10 +60,6 @@ The sitemap is saved in: `<output_path>/sitemap.<format>`
 Here is an example configuration (it is also the default settings):
 
 ```python
-# Where your plug-ins reside
-PLUGIN_PATHS = ["/where/you/cloned/it/pelican-plugins/",]
-PLUGINS=["sitemap",]
-
 SITEMAP = {
     "format": "xml",
     "priorities": {
