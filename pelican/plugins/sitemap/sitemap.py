@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Sitemap
 -------
@@ -6,7 +5,6 @@ Sitemap
 The sitemap plugin generates plain-text or XML sitemaps.
 """
 
-from __future__ import unicode_literals
 
 from codecs import open
 import collections
@@ -51,7 +49,7 @@ def format_date(date):
     return date.strftime("%Y-%m-%dT%H:%M:%S") + tz
 
 
-class SitemapGenerator(object):
+class SitemapGenerator:
     def __init__(self, context, settings, path, theme, output_path, *null):
 
         self.output_path = output_path
@@ -111,7 +109,7 @@ class SitemapGenerator(object):
                         warning("sitemap plugin: priorities must be numbers")
                         warning(
                             "sitemap plugin: setting SITEMAP['priorities']"
-                            "['{0}'] on {1}".format(k, default)
+                            "['{}'] on {}".format(k, default)
                         )
                         pris[k] = default
                 self.priorities.update(pris)
@@ -124,10 +122,10 @@ class SitemapGenerator(object):
                 for k, v in chfreqs.items():
                     if k in valid_keys and v not in valid_chfreqs:
                         default = self.changefreqs[k]
-                        warning("sitemap plugin: invalid changefreq '{0}'".format(v))
+                        warning(f"sitemap plugin: invalid changefreq '{v}'")
                         warning(
                             "sitemap plugin: setting SITEMAP['changefreqs']"
-                            "['{0}'] on '{1}'".format(k, default)
+                            "['{}'] on '{}'".format(k, default)
                         )
                         chfreqs[k] = default
                 self.changefreqs.update(chfreqs)
@@ -209,7 +207,7 @@ class SitemapGenerator(object):
             setattr(wrapper, "modified", str(lastmod))
 
     def generate_output(self, writer):
-        path = os.path.join(self.output_path, "sitemap.{0}".format(self.format))
+        path = os.path.join(self.output_path, f"sitemap.{self.format}")
 
         pages = (
             self.context["pages"]
@@ -226,7 +224,7 @@ class SitemapGenerator(object):
         for article in self.context["articles"]:
             pages += article.translations
 
-        info("writing {0}".format(path))
+        info(f"writing {path}")
 
         with open(path, "w", encoding="utf-8") as fd:
 
@@ -240,11 +238,9 @@ class SitemapGenerator(object):
             )
 
             for standard_page in self.context["DIRECT_TEMPLATES"]:
-                standard_page_url = self.context.get(
-                    "{}_URL".format(standard_page.upper())
-                )
+                standard_page_url = self.context.get(f"{standard_page.upper()}_URL")
                 standard_page_save_as = self.context.get(
-                    "{}_SAVE_AS".format(standard_page.upper())
+                    f"{standard_page.upper()}_SAVE_AS"
                 )
 
                 # No save _SAVE_AS field means no output file. Skip.
@@ -254,7 +250,7 @@ class SitemapGenerator(object):
                 fake = FakePage(
                     status="published",
                     date=self.now,
-                    url=standard_page_url or "{}.html".format(standard_page),
+                    url=standard_page_url or f"{standard_page}.html",
                     save_as=standard_page_save_as,
                 )
                 self.write_url(fake, fd)
