@@ -2,7 +2,7 @@
 #                                   sitemap                                    #
 #  XML/raw sitemaps with options for compression and including arbitrary URLs  #
 #                          (C)2020, 2022 Jeremy Brown                          #
-#            Released under Prosperity Public License version 3.0.0            #
+#       Released under version 3.0 of the Non-Profit Open Source License       #
 ################################################################################
 
 from collections import namedtuple
@@ -27,6 +27,7 @@ from pytz import timezone
 from pelican.contents import Article, Page
 from pelican.urlwrappers import URLWrapper
 from pelican.utils import get_date
+
 
 LOG = logging.getLogger(__name__)
 MAX_URL_PER_FILE = 50000

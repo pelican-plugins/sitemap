@@ -2,7 +2,7 @@
 #                                   sitemap                                    #
 #  XML/raw sitemaps with options for compression and including arbitrary URLs  #
 #                          (C)2020, 2022 Jeremy Brown                          #
-#            Released under Prosperity Public License version 3.0.0            #
+#       Released under version 3.0 of the Non-Profit Open Source License       #
 ################################################################################
 
 from copy import deepcopy

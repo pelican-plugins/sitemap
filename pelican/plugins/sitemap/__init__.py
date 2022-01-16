@@ -9,6 +9,7 @@ from pelican import signals
 
 from .sitemap import SitemapGenerator
 
+
 gen = SitemapGenerator()
 
 
