@@ -41,11 +41,15 @@ The `SITEMAP` setting must be a Python dictionary and can contain these keys:
 
     Valid frequency values are `always`, `hourly`, `daily`, `weekly`, `monthly`, `yearly` and `never`.
 
-You can exclude URLs from being included in the site map via regular expressions. For example, to exclude all URLs containing `tag/` or `category/` you can use the following `SITEMAP` setting.
+* `exclude`, which is a list of regular expressions that will be used to exclude matched URLs from the sitemap if ANY of them them match. For example:
 
 ```python
 SITEMAP = {
-    "exclude": ["tag/", "category/"]
+    "exclude": [
+        "^/noindex/",  # starts with '/noindex/'
+        "/tag/",       # contains '/tag/'
+        "\.json$",     # ends with '.json'
+    ]
 }
 ```
 

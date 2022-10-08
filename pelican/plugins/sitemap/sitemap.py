@@ -21,6 +21,8 @@ xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitem
 xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 """
 
+TXT_URL = "{0}/{1}\n"
+
 XML_URL = """
 <url>
 <loc>{0}/{1}</loc>
@@ -79,7 +81,7 @@ class SitemapGenerator:
             fmt = config.get("format")
             pris = config.get("priorities")
             chfreqs = config.get("changefreqs")
-            self.sitemapExclude = config.get("exclude", [])
+            self.sitemapExclude = [re.compile(x) for x in config.get("exclude", [])]
 
             if fmt not in ("xml", "txt"):
                 warning("sitemap plugin: SITEMAP['format'] must be 'txt' or 'xml'")
@@ -170,16 +172,13 @@ class SitemapGenerator:
         pageurl = "" if page.url == "index.html" else page.url
 
         # Exclude URLs from the sitemap:
+        if any(x.search(pageurl) for x in self.sitemapExclude):
+            return
+
         if self.format == "xml":
-            flag = False
-            for regstr in self.sitemapExclude:
-                if re.match(regstr, pageurl):
-                    flag = True
-                    break
-            if not flag:
-                fd.write(XML_URL.format(self.siteurl, pageurl, lastmod, chfreq, pri))
+            fd.write(XML_URL.format(self.siteurl, pageurl, lastmod, chfreq, pri))
         else:
-            fd.write(self.siteurl + "/" + pageurl + "\n")
+            fd.write(TXT_URL.format(self.siteurl, pageurl))
 
     def get_date_modified(self, page, default):
         """Return the page's modified date."""
