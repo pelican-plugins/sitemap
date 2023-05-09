@@ -51,7 +51,6 @@ def format_date(date):
 
 class SitemapGenerator:
     def __init__(self, context, settings, path, theme, output_path, *null):
-
         self.output_path = output_path
         self.context = context
         self.now = datetime.now()
@@ -134,7 +133,6 @@ class SitemapGenerator:
                 warning("sitemap plugin: using the default values")
 
     def write_url(self, page, fd):  # NOQA C901
-
         if getattr(page, "status", "published") != "published":
             return
 
@@ -192,7 +190,7 @@ class SitemapGenerator:
             return default
 
     def set_url_wrappers_modification_date(self, wrappers):
-        for (wrapper, articles) in wrappers:
+        for wrapper, articles in wrappers:
             lastmod = datetime.min.replace(tzinfo=self.timezone)
             for article in articles:
                 lastmod = max(lastmod, article.date.replace(tzinfo=self.timezone))
@@ -227,7 +225,6 @@ class SitemapGenerator:
         info(f"writing {path}")
 
         with open(path, "w", encoding="utf-8") as fd:
-
             if self.format == "xml":
                 fd.write(XML_HEADER)
             else:
@@ -258,7 +255,6 @@ class SitemapGenerator:
             # add template pages
             # We use items for Py3k compat. .iteritems() otherwise
             for path, template_page_url in self.context["TEMPLATE_PAGES"].items():
-
                 # don't add duplicate entry for index page
                 if template_page_url == "index.html":
                     continue
