@@ -1,14 +1,15 @@
 from inspect import cleandoc
+import logging
 import os
 from pathlib import Path
 from shutil import which
-import sys
 
 from invoke import task
 
+logger = logging.getLogger(__name__)
+
 PKG_NAME = "sitemap"
 PKG_PATH = Path(f"pelican/plugins/{PKG_NAME}")
-TOOLS = ("poetry", "pre-commit")
 
 ACTIVE_VENV = os.environ.get("VIRTUAL_ENV", None)
 VENV_HOME = Path(os.environ.get("WORKON_HOME", "~/.local/share/virtualenvs"))
@@ -16,16 +17,19 @@ VENV_PATH = Path(ACTIVE_VENV) if ACTIVE_VENV else (VENV_HOME.expanduser() / PKG_
 VENV = str(VENV_PATH.expanduser())
 BIN_DIR = "bin" if os.name != "nt" else "Scripts"
 VENV_BIN = Path(VENV) / Path(BIN_DIR)
+
+TOOLS = ("poetry", "pre-commit")
 POETRY = which("poetry") if which("poetry") else (VENV_BIN / "poetry")
 CMD_PREFIX = f"{VENV_BIN}/" if ACTIVE_VENV else f"{POETRY} run "
 PRECOMMIT = which("pre-commit") if which("pre-commit") else f"{CMD_PREFIX}pre-commit"
-PTY = True if os.name != "nt" else False
+PTY = os.name != "nt"
 
 
 @task
-def tests(c):
-    """Run the test suite."""
-    c.run(f"{CMD_PREFIX}pytest", pty=PTY)
+def tests(c, deprecations=False):
+    """Run the test suite, optionally with `--deprecations`."""
+    deprecations_flag = "" if deprecations else "-W ignore::DeprecationWarning"
+    c.run(f"{CMD_PREFIX}pytest {deprecations_flag}", pty=PTY)
 
 
 @task
@@ -40,28 +44,21 @@ def black(c, check=False, diff=False):
 
 
 @task
-def isort(c, check=False, diff=False):
-    """Ensure imports are sorted according to project standards."""
-    check_flag, diff_flag = "", ""
-    if check:
-        check_flag = "-c"
+def ruff(c, fix=False, diff=False):
+    """Run Ruff to ensure code meets project standards."""
+    diff_flag, fix_flag = "", ""
+    if fix:
+        fix_flag = "--fix"
     if diff:
         diff_flag = "--diff"
-    c.run(f"{CMD_PREFIX}isort {check_flag} {diff_flag} .")
+    c.run(f"{CMD_PREFIX}ruff check {diff_flag} {fix_flag} .")
 
 
 @task
-def flake8(c):
-    """Check code for PEP8 compliance via Flake8."""
-    c.run(f"{CMD_PREFIX}flake8 {PKG_PATH} tasks.py")
-
-
-@task
-def lint(c, diff=False):
+def lint(c, fix=False, diff=False):
     """Check code style via linting tools."""
-    isort(c, check=True, diff=diff)
-    black(c, check=True, diff=diff)
-    flake8(c)
+    ruff(c, fix=fix, diff=diff)
+    black(c, check=(not fix), diff=diff)
 
 
 @task
@@ -69,14 +66,14 @@ def tools(c):
     """Install development tools in the virtual environment if not already on PATH."""
     for tool in TOOLS:
         if not which(tool):
-            print(f"** Installing {tool}.")
+            logger.info(f"** Installing {tool}.")
             c.run(f"{CMD_PREFIX}pip install {tool}")
 
 
 @task
 def precommit(c):
-    """Install pre-commit hooks to `.git/hooks/pre-commit`."""
-    print("** Installing pre-commit hooks.")
+    """Install pre-commit hooks to .git/hooks/pre-commit."""
+    logger.info("** Installing pre-commit hooks.")
     c.run(f"{PRECOMMIT} install")
 
 
@@ -88,7 +85,7 @@ def setup(c):
         c.run(f"{CMD_PREFIX}python -m pip install --upgrade pip")
         c.run(f"{POETRY} install")
         precommit(c)
-        print("\nDevelopment environment should now be set up and ready!\n")
+        logger.info("\nDevelopment environment should now be set up and ready!\n")
     else:
         error_message = """
             Poetry is not installed, and there is no active virtual environment available.
@@ -99,4 +96,4 @@ def setup(c):
 
             Once you have taken one of the above two steps, run `invoke setup` again.
             """  # noqa: E501
-        sys.exit(cleandoc(error_message))
+        raise SystemExit(cleandoc(error_message))
