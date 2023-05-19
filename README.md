@@ -12,6 +12,10 @@ This plugin can be installed via:
 
     python -m pip install pelican-sitemap
 
+Make sure to add the the plugin to your `PLUGINS`:
+
+    PLUGINS = [ ..., "sitemap", ...]
+
 Usage
 -----
 
