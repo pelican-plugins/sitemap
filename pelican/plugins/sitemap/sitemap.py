@@ -172,16 +172,16 @@ class SitemapGenerator:
         pageurl = "" if page.url == "index.html" else page.url
 
         # Exclude URLs from the sitemap:
-        if self.format == "xml":
-            flag = False
-            for regstr in self.sitemapExclude:
-                if re.match(regstr, pageurl):
-                    flag = True
-                    break
-            if not flag:
+        flag = False
+        for regstr in self.sitemapExclude:
+            if re.match(regstr, pageurl):
+                flag = True
+                break
+        if not flag:
+            if self.format == "xml":
                 fd.write(XML_URL.format(self.siteurl, pageurl, lastmod, chfreq, pri))
-        else:
-            fd.write(self.siteurl + "/" + pageurl + "\n")
+            else:
+                fd.write(self.siteurl + "/" + pageurl + "\n")
 
     def get_date_modified(self, page, default):
         if hasattr(page, "modified"):
