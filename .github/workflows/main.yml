@@ -1,51 +1,99 @@
 name: build
 
-on:
-  push:
-    branches:
-  pull_request:
-    branches:
+on: [push, pull_request]
+
+env:
+  PYTEST_ADDOPTS: "--color=yes"
 
 jobs:
   test:
+    name: Test - ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7]
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+
+      - name: Install Poetry
+        run: pipx install poetry
+
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Upgrade Pip
-        run: python -m pip install --upgrade pip
-      - name: Install Poetry
-        run: python -m pip install poetry
+          cache: "poetry"
+          cache-dependency-path: "pyproject.toml"
+
       - name: Install dependencies
         run: |
-          poetry run pip install --upgrade pip
-          poetry install
+          poetry env use "${{ matrix.python-version }}"
+          poetry install --no-interaction
+
+      - name: Run tests
+        run: poetry run invoke tests
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Validate links in Markdown files
+        uses: JustinBeckwith/linkinator-action@v1
+        with:
+          retry: true
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+          cache: "poetry"
+          cache-dependency-path: "pyproject.toml"
+
+      - name: Install dependencies
+        run: |
+          poetry env use "3.9"
+          poetry install --no-interaction
+
       - name: Run linters
-        run: poetry run invoke lint
+        run: poetry run invoke lint --diff
+
+  deploy:
+    name: Deploy
+    environment: Deployment
+    needs: [test, lint]
+    runs-on: ubuntu-latest
+    if: github.ref=='refs/heads/main' && github.event_name!='pull_request'
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
       - name: Check release
-        if: github.ref == 'refs/heads/main'
-        run: |
-          python -m pip install githubrelease
-          python -m pip install autopub
-          echo "##[set-output name=release;]$(autopub check)"
         id: check_release
-      - name: Deploy
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && steps.check_release.outputs.release == ''
         run: |
-          git checkout ${GITHUB_REF##*/}
-          git remote set-url origin https://$GITHUB_TOKEN@github.com/${GITHUB_REPOSITORY}
+          python -m pip install poetry githubrelease httpx==0.18.2 autopub
+          echo "release=$(autopub check)" >> $GITHUB_OUTPUT
+
+      - name: Publish
+        if: ${{ steps.check_release.outputs.release=='' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: |
+          git remote set-url origin https://$GITHUB_TOKEN@github.com/${{ github.repository }}
           autopub prepare
           poetry build
           autopub commit
           autopub githubrelease
           poetry publish -u __token__ -p $PYPI_PASSWORD
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
