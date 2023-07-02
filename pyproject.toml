@@ -78,10 +78,14 @@ select = [
 ]
 
 ignore = [
+  "B010",    # `setattr` with a constant attribute value
   "D100",    # missing docstring in public module
   "D104",    # missing docstring in public package
   "D203",    # blank line before class docstring
   "D213",    # multi-line docstring summary should start at the second line
+  "PLR0912", # too many branches
+  "PLR0913", # too many arguments to function call
+  "RET505",  # unnecessary `else` after `return` statement
 ]
 
 target-version = "py38"

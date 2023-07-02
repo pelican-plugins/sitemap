@@ -1,9 +1,4 @@
-"""
-Sitemap
--------
-
-The sitemap plugin generates plain-text or XML sitemaps.
-"""
+"""The Sitemap plugin generates plain-text or XML sitemaps."""
 
 
 from codecs import open
@@ -24,7 +19,7 @@ XML_HEADER = """<?xml version="1.0" encoding="utf-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd"
 xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-"""  # noqa: E501
+"""
 
 XML_URL = """
 <url>
@@ -41,6 +36,7 @@ XML_FOOTER = """
 
 
 def format_date(date):
+    """Format the date in the expected format."""
     if date.tzinfo:
         tz = date.strftime("%z")
         tz = tz[:-2] + ":" + tz[-2:]
@@ -50,8 +46,10 @@ def format_date(date):
 
 
 class SitemapGenerator:
-    def __init__(self, context, settings, path, theme, output_path, *null):
+    """Sitemap generator class."""
 
+    def __init__(self, context, settings, path, theme, output_path, *null):
+        """Initialize the sitemap generator."""
         self.output_path = output_path
         self.context = context
         self.now = datetime.now()
@@ -133,8 +131,8 @@ class SitemapGenerator:
                 warning("sitemap plugin: SITEMAP['changefreqs'] must be a dict")
                 warning("sitemap plugin: using the default values")
 
-    def write_url(self, page, fd):  # NOQA C901
-
+    def write_url(self, page, fd):
+        """Write the URL."""
         if getattr(page, "status", "published") != "published":
             return
 
@@ -184,6 +182,7 @@ class SitemapGenerator:
             fd.write(self.siteurl + "/" + pageurl + "\n")
 
     def get_date_modified(self, page, default):
+        """Return the page's modified date."""
         if hasattr(page, "modified"):
             if isinstance(page.modified, datetime):
                 return page.modified
@@ -192,7 +191,8 @@ class SitemapGenerator:
             return default
 
     def set_url_wrappers_modification_date(self, wrappers):
-        for (wrapper, articles) in wrappers:
+        """Set the URL wrapper's modification date."""
+        for wrapper, articles in wrappers:
             lastmod = datetime.min.replace(tzinfo=self.timezone)
             for article in articles:
                 lastmod = max(lastmod, article.date.replace(tzinfo=self.timezone))
@@ -207,6 +207,7 @@ class SitemapGenerator:
             setattr(wrapper, "modified", str(lastmod))
 
     def generate_output(self, writer):
+        """Generate and write the output to disk."""
         path = os.path.join(self.output_path, f"sitemap.{self.format}")
 
         pages = (
@@ -227,7 +228,6 @@ class SitemapGenerator:
         info(f"writing {path}")
 
         with open(path, "w", encoding="utf-8") as fd:
-
             if self.format == "xml":
                 fd.write(XML_HEADER)
             else:
@@ -257,8 +257,7 @@ class SitemapGenerator:
 
             # add template pages
             # We use items for Py3k compat. .iteritems() otherwise
-            for path, template_page_url in self.context["TEMPLATE_PAGES"].items():
-
+            for template_page_url in self.context["TEMPLATE_PAGES"].items():
                 # don't add duplicate entry for index page
                 if template_page_url == "index.html":
                     continue
@@ -279,8 +278,10 @@ class SitemapGenerator:
 
 
 def get_generators(generators):
+    """Return the Sitemap generator."""
     return SitemapGenerator
 
 
 def register():
+    """Register the plugin with Pelican."""
     signals.get_generators.connect(get_generators)
