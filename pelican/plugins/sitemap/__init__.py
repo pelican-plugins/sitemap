@@ -1,1 +1,1 @@
-from .sitemap import *  # NOQA
+from .sitemap import *  # NOQA: F403
