@@ -6,6 +6,7 @@ import sys
 
 from invoke import task
 
+
 PKG_NAME = "sitemap"
 PKG_PATH = Path(f"pelican/plugins/{PKG_NAME}")
 TOOLS = ("poetry", "pre-commit")
