@@ -46,44 +46,49 @@ def format_date(date):
     return date.strftime("%Y-%m-%dT%H:%M:%S") + tz
 
 
+CHANGEFREQ_DEFAULTS = {
+    "articles": "monthly",
+    "pages": "monthly",
+    "indexes": "daily",
+}
+PRIORITY_DEFAULTS = {
+    "articles": 0.5,
+    "pages": 0.5,
+    "indexes": 0.5,
+}
+CHANGEFREQ_VALUES = {
+    "always",
+    "hourly",
+    "daily",
+    "weekly",
+    "monthly",
+    "yearly",
+    "never",
+}
+
+
 class SitemapGenerator:
     """Sitemap generator class."""
 
-    CHANGEFREQ_DEFAULTS = {
-        "articles": "monthly",
-        "pages": "monthly",
-        "indexes": "daily",
-    }
-    PRIORITY_DEFAULTS = {
-        "articles": 0.5,
-        "pages": 0.5,
-        "indexes": 0.5,
-    }
-    CHANGEFREQ_VALUES = {
-        "always",
-        "hourly",
-        "daily",
-        "weekly",
-        "monthly",
-        "yearly",
-        "never",
-    }
-
     def __init__(self):
+        """Initialize the sitemap generator."""
         self.now = datetime.now()
         self.page_queue = []
         self._main_pelican = None
 
     def init(self, pelican):
+        """Initialize the plugin."""
         log.debug("sitemap: Initialize")
         if self._main_pelican is None:
             self._main_pelican = pelican
 
     def queue_page(self, path, context):
+        """Queue one site page for later generation."""
         obj = context.get("article") or context.get("page")
         self.page_queue.append((path, obj))
 
     def finalize(self, pelican):
+        """Write the sitemap of queued pages."""
         # Wait for all i18n_subsites to finish
         # https://github.com/pelican-plugins/sitemap/pull/3#discussion_r436390684
         if pelican == self._main_pelican:
@@ -100,8 +105,8 @@ class SitemapGenerator:
         config = context.get("SITEMAP", {})
         self._check_config(config)
         excluded = config.get("exclude", ())
-        changefreqs = dict(self.CHANGEFREQ_DEFAULTS, **config.get("changefreqs", {}))
-        priorities = dict(self.PRIORITY_DEFAULTS, **config.get("priorities", {}))
+        changefreqs = dict(CHANGEFREQ_DEFAULTS, **config.get("changefreqs", {}))
+        priorities = dict(PRIORITY_DEFAULTS, **config.get("priorities", {}))
         fmt = config.get("format", "xml")
         is_xml = fmt == "xml"
         filename = os.path.join(output_path, "sitemap." + fmt)
@@ -118,7 +123,7 @@ class SitemapGenerator:
             nonlocal excluded
             url, obj = item
             is_private = getattr(obj, "private", "") == "True"
-            is_hidden = not getattr(obj, "status", "published") == "published"
+            is_hidden = getattr(obj, "status", "published") != "published"
             return (
                 is_private
                 or is_hidden
@@ -177,32 +182,35 @@ class SitemapGenerator:
             if is_xml:
                 fd.write(XML_FOOTER)
 
-        log.info("sitemap: Written {!r}".format(filename))
+        log.info(f"sitemap: Written {filename!r}")
 
     def _check_config(self, config):
         if not isinstance(config, dict):
             log.error("sitemap: The SITEMAP setting must be a dict")
-        for key in config.keys():
+        for key in config:
             if key not in ("format", "exclude", "priorities", "changefreqs"):
-                log.error("sitemap: Invalid 'SITEMAP' key: {!r}".format(key))
+                log.error(f"sitemap: Invalid 'SITEMAP' key: {key!r}")
         changefreqs = config.get("changefreqs", {})
         for key, value in changefreqs.items():
-            if key not in self.CHANGEFREQ_DEFAULTS:
-                log.error("sitemap: Invalid 'changefreqs' key: {!r}".format(key))
-            if value not in self.CHANGEFREQ_VALUES:
-                log.error("sitemap: Invalid 'changefreqs' value: {!r}".format(value))
+            if key not in CHANGEFREQ_DEFAULTS:
+                log.error(f"sitemap: Invalid 'changefreqs' key: {key!r}")
+            if value not in CHANGEFREQ_VALUES:
+                log.error(f"sitemap: Invalid 'changefreqs' value: {key!r}")
         for key, value in config.get("priorities", {}).items():
-            if key not in self.PRIORITY_DEFAULTS:
-                log.error("sitemap: Invalid 'priorities' key: {!r}".format(key))
+            if key not in PRIORITY_DEFAULTS:
+                log.error(f"sitemap: Invalid 'priorities' key: {key!r}")
+            if not isinstance(value, float):
+                log.error(f"sitemap: Require numeric priority. Got: {value!r}")
         fmt = config.get("format")
         if fmt not in (None, "txt", "xml"):
             log.error(
-                "sitemap: Invalid 'format' value: %r; " "must be 'txt' or 'xml'", fmt,
+                "sitemap: Invalid 'format' value: %r; should be 'txt' or 'xml'",
+                fmt,
             )
         exclude = config.get("exclude", ())
         if not all(isinstance(i, str) for i in exclude):
             log.error(
-                "sitemap: Invalid 'exclude' value: %r; " "must be a list of str",
+                "sitemap: Invalid 'exclude' value: %r; must be a list of str",
                 exclude,
             )
 
@@ -211,6 +219,7 @@ generator = SitemapGenerator()
 
 
 def register():
+    """Register the plugin callbacks."""
     # We connect to get_generators (instead of e.g. initialized)
     # because i18n_subsites does, so the whole thing works with
     # pelican --autoreload
