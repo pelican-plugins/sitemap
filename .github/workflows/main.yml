@@ -1,53 +1,106 @@
 name: build
 
-on:
-  push:
-    branches:
-  pull_request:
-    branches:
+on: [push, pull_request]
+
+env:
+  PYTEST_ADDOPTS: "--color=yes"
 
 jobs:
   test:
+    name: Test - ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7]
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+
+      - name: Install Poetry
+        run: pipx install poetry
+
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Upgrade Pip
-        run: python -m pip install -U pip
-      - name: Install Poetry
-        run: python -m pip install poetry
+          cache: "poetry"
+          cache-dependency-path: "pyproject.toml"
+
       - name: Install dependencies
         run: |
-          poetry run pip install -U pip
-          poetry install
-          poetry run pip uninstall -y pelican
-          poetry run pip install -e git://github.com/getpelican/pelican.git#egg=pelican
+          poetry env use "${{ matrix.python-version }}"
+          poetry install --no-interaction
+
+      - name: Run tests
+        run: poetry run invoke tests
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Validate links in Markdown files
+        uses: JustinBeckwith/linkinator-action@v1
+        with:
+          retry: true
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+          cache: "poetry"
+          cache-dependency-path: "pyproject.toml"
+
+      - name: Install dependencies
+        run: |
+          poetry env use "3.9"
+          poetry install --no-interaction
+
       - name: Run linters
-        run: poetry run invoke lint
+        run: poetry run invoke lint --diff
+
+  deploy:
+    name: Deploy
+    environment: Deployment
+    needs: [test, lint]
+    runs-on: ubuntu-latest
+    if: github.ref=='refs/heads/main' && github.event_name!='pull_request'
+
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
       - name: Check release
-        if: github.ref == 'refs/heads/master'
-        run: |
-          python -m pip install githubrelease
-          python -m pip install autopub
-          echo "##[set-output name=release;]$(autopub check)"
         id: check_release
-      - name: Deploy
-        if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && steps.check_release.outputs.release == ''
         run: |
-          git checkout ${GITHUB_REF##*/}
-          git remote set-url origin https://$GITHUB_TOKEN@github.com/${GITHUB_REPOSITORY}
-          autopub prepare
-          poetry build
-          autopub commit
-          autopub githubrelease
-          poetry publish -u __token__ -p $PYPI_PASSWORD
+          python -m pip install autopub[github]
+          autopub check
+
+      - name: Publish
+        if: ${{ steps.check_release.outputs.autopub_release=='true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: |
+          autopub prepare
+          autopub commit
+          autopub build
+          autopub githubrelease
+
+      - name: Upload package to PyPI
+        if: ${{ steps.check_release.outputs.autopub_release=='true' }}
+        uses: pypa/gh-action-pypi-publish@release/v1

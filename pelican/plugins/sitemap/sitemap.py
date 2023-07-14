@@ -1,10 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-Sitemap
--------
+"""The Sitemap plugin generates plain-text or XML sitemaps."""
 
-The sitemap plugin generates plain-text or XML sitemaps.
-"""
 from datetime import datetime
 import logging
 import os.path
@@ -21,6 +16,8 @@ xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitem
 xmlns:xhtml="http://www.w3.org/1999/xhtml"
 xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 """
+
+TXT_URL = "{0}/{1}\n"
 
 XML_URL = """
 <url>
@@ -40,6 +37,7 @@ XML_FOOTER = """
 
 
 def format_date(date):
+    """Format the date in the expected format."""
     if date.tzinfo:
         tz = date.strftime("%z")
         tz = tz[:-2] + ":" + tz[-2:]
@@ -49,6 +47,8 @@ def format_date(date):
 
 
 class SitemapGenerator:
+    """Sitemap generator class."""
+
     CHANGEFREQ_DEFAULTS = {
         "articles": "monthly",
         "pages": "monthly",
@@ -122,7 +122,7 @@ class SitemapGenerator:
             return (
                 is_private
                 or is_hidden
-                or any(re.match(pattern, url) for pattern in excluded)
+                or any(re.search(pattern, url) for pattern in excluded)
             )
 
         page_queue = [(clean_url(to_url(path)), obj) for path, obj in self.page_queue]
