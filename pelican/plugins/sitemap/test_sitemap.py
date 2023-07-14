@@ -26,7 +26,6 @@ class TestSitemap(unittest.TestCase):
                 "SITEURL": "http://localhost",
                 "CONTENT": TEST_DATA,
                 "OUTPUT_PATH": self.output_path,
-
                 "PLUGINS": [sitemap],
                 "SITEMAP": {
                     "format": sitemap_format,
