@@ -13,6 +13,8 @@ TEST_DATA = BASE_DIR / "test_data"
 
 
 class TestSitemap(unittest.TestCase):
+    """Test class for Sitemap plugin."""
+
     def setUp(self):
         self.output_path = mkdtemp(prefix="pelican-plugins-sitemap-tests-")
 
