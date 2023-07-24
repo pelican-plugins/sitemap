@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+1.1.0 - 2023-07-24
+------------------
+
+Re-factor plugin, including the following changes:
+
+* Act on every `content_written` signal to avoid guessing what pages to cover.
+* Instead of manually fiddling with timezones, expect `article.date` to be TZ-aware if required.
+* Add `xmlns:xhtml` to XML header.
+
+Contributed by [kernc](https://github.com/kernc) via [PR #3](https://github.com/pelican-plugins/sitemap/pull/3/)
+
+
 1.0.3 - 2023-07-12
 ------------------
 
