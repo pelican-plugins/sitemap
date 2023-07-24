@@ -80,6 +80,7 @@ select = [
 ignore = [
   "B010",    # `setattr` with a constant attribute value
   "D100",    # missing docstring in public module
+  "D102",    # missing docstring in public method
   "D104",    # missing docstring in public package
   "D203",    # blank line before class docstring
   "D213",    # multi-line docstring summary should start at the second line
