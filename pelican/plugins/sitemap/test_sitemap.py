@@ -51,6 +51,7 @@ http://localhost/tag/bar.html
 http://localhost/tag/foo.html
 http://localhost/tag/foobar.html
 http://localhost/tags.html
+http://localhost/test-post-daily.html
 http://localhost/test-post.html
 """
         self.assertEqual(expected, contents)
@@ -65,6 +66,16 @@ http://localhost/test-post.html
 <lastmod>2023-07-12T13:00:00+00:00</lastmod>
 <changefreq>monthly</changefreq>
 <priority>0.5</priority>
+</url>
+"""
+        self.assertIn(needle, contents)
+
+        needle = """\
+<url>
+<loc>http://localhost/test-post-daily.html</loc>
+<lastmod>2023-07-12T13:00:00+00:00</lastmod>
+<changefreq>daily</changefreq>
+<priority>0.3</priority>
 </url>
 """
         self.assertIn(needle, contents)

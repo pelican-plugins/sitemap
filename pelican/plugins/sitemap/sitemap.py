@@ -156,8 +156,23 @@ class SitemapGenerator:
                     if isinstance(obj, contents.Page)
                     else "indexes"
                 )
-                changefreq = changefreqs[content_type]
-                priority = float(priorities[content_type])
+
+                # see if changefreq specified in metadata headers, fail back to config
+                changefreq = getattr(obj, "changefreq", changefreqs[content_type])
+                if changefreq not in CHANGEFREQ_VALUES:
+                    log.error(f"sitemap: Invalid 'changefreqs' value: {changefreq!r}")
+                    changefreq = changefreqs[content_type]
+
+                # see if priority specified in metadata headers, fail back to config
+                priority_raw = getattr(obj, "priority", priorities[content_type])
+                try:
+                    priority = float(priority_raw)
+                except ValueError:
+                    log.exception(
+                        f"sitemap: Require numeric priority. Got: {priority_raw!r}"
+                    )
+                    priority = priorities[content_type]
+
                 translations = "".join(
                     XML_TRANSLATION.format(
                         trans.lang,
