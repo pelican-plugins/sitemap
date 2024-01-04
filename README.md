@@ -81,6 +81,25 @@ SITEMAP = {
 }
 ```
 
+Using Metadata
+--------------
+
+In addition to applying a configuration to all articles/pages using the `SITEMAP`, `ChangeFreq` and `Priority` can also be specified as metadata for individual articles/pages. The same restrictions on the values apply:
+* Valid options for `ChangeFreq` are  `always`, `hourly`, `daily`, `weekly`, `monthly`, `yearly` and `never`.
+* Valid options for `Priority` must be a decimal number between `0` and `1`.
+
+**Example**
+
+Here is an example of using metadata in a Markdown file:
+
+```
+Title: Frequently Changed Article
+ChangeFreq: daily
+Priority: 0.3
+
+This is the article content.
+```
+
 Contributing
 ------------
 
