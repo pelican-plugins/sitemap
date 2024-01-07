@@ -195,7 +195,7 @@ class SitemapGenerator:
             if key not in CHANGEFREQ_DEFAULTS:
                 log.error(f"sitemap: Invalid 'changefreqs' key: {key!r}")
             if value not in CHANGEFREQ_VALUES:
-                log.error(f"sitemap: Invalid 'changefreqs' value: {key!r}")
+                log.error(f"sitemap: Invalid 'changefreqs' value: {value!r}")
         for key, value in config.get("priorities", {}).items():
             if key not in PRIORITY_DEFAULTS:
                 log.error(f"sitemap: Invalid 'priorities' key: {key!r}")
