@@ -33,17 +33,6 @@ def tests(c, deprecations=False):
 
 
 @task
-def black(c, check=False, diff=False):
-    """Run Black auto-formatter, optionally with `--check` or `--diff`."""
-    check_flag, diff_flag = "", ""
-    if check:
-        check_flag = "--check"
-    if diff:
-        diff_flag = "--diff"
-    c.run(f"{CMD_PREFIX}black {check_flag} {diff_flag} {PKG_PATH} tasks.py")
-
-
-@task
 def ruff(c, fix=False, diff=False):
     """Run Ruff to ensure code meets project standards."""
     diff_flag, fix_flag = "", ""
@@ -58,7 +47,6 @@ def ruff(c, fix=False, diff=False):
 def lint(c, fix=False, diff=False):
     """Check code style via linting tools."""
     ruff(c, fix=fix, diff=diff)
-    black(c, check=(not fix), diff=diff)
 
 
 @task

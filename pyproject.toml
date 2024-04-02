@@ -33,7 +33,6 @@ pelican = ">=4.5"
 markdown = {version = ">=3.2", optional = true}
 
 [tool.poetry.group.dev.dependencies]
-black = "^23"
 invoke = "^2.0"
 markdown = "^3.4"
 ruff = ">=0.0.275"
