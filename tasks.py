@@ -40,7 +40,7 @@ def ruff(c, fix=False, diff=False):
         fix_flag = "--fix"
     if diff:
         diff_flag = "--diff"
-    c.run(f"{CMD_PREFIX}ruff check {diff_flag} {fix_flag} .")
+    c.run(f"{CMD_PREFIX}ruff check {diff_flag} {fix_flag} .", pty=PTY)
 
 
 @task
@@ -54,14 +54,14 @@ def tools(c):
     """Install development tools in the virtual environment if not already on PATH."""
     for tool in TOOLS:
         if not which(tool):
-            logger.info(f"** Installing {tool}.")
+            logger.info(f"** Installing {tool} **")
             c.run(f"{CMD_PREFIX}pip install {tool}")
 
 
 @task
 def precommit(c):
     """Install pre-commit hooks to .git/hooks/pre-commit."""
-    logger.info("** Installing pre-commit hooks.")
+    logger.info("** Installing pre-commit hooks **")
     c.run(f"{PRECOMMIT} install")
 
 
@@ -70,8 +70,8 @@ def setup(c):
     """Set up the development environment."""
     if which("poetry") or ACTIVE_VENV:
         tools(c)
-        c.run(f"{CMD_PREFIX}python -m pip install --upgrade pip")
-        c.run(f"{POETRY} install")
+        c.run(f"{CMD_PREFIX}python -m pip install --upgrade pip", pty=PTY)
+        c.run(f"{POETRY} install", pty=PTY)
         precommit(c)
         logger.info("\nDevelopment environment should now be set up and ready!\n")
     else:
