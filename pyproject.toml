@@ -1,49 +1,53 @@
-[tool.poetry]
+[project]
 name = "pelican-sitemap"
 version = "1.1.0"
 description = "Pelican plugin to generate sitemap in plain-text or XML format"
-authors = ["Pelican Dev Team <authors@getpelican.com>"]
-license = "AGPL-3.0"
+authors = [{name = "Pelican Dev Team", email = "authors@getpelican.com"}]
+license = {text = "AGPL-3.0"}
 readme = "README.md"
 keywords = ["pelican", "plugin", "sitemap"]
-repository = "https://github.com/pelican-plugins/sitemap"
-documentation = "https://docs.getpelican.com"
-packages = [
-    { include = "pelican" },
-]
-
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
     "Framework :: Pelican",
     "Framework :: Pelican :: Plugins",
     "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
     "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Internet :: WWW/HTTP",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-[tool.poetry.urls]
-"Funding" = "https://donate.getpelican.com/"
+requires-python = ">=3.8.1,<4.0"
+dependencies = [
+    "pelican>=4.5",
+]
+
+[project.urls]
+Homepage = "https://github.com/pelican-plugins/sitemap"
 "Issue Tracker" = "https://github.com/pelican-plugins/sitemap/issues"
+Funding = "https://donate.getpelican.com/"
 
-[tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-pelican = ">=4.5"
-markdown = {version = ">=3.2", optional = true}
+[project.optional-dependencies]
+markdown = ["markdown>=3.4"]
 
-[tool.poetry.group.dev.dependencies]
-invoke = ">=2.2"
-markdown = ">=3.4"
-ruff = ">=0.3.5,<0.4.0"
-
-[tool.poetry.group.test.dependencies]
-pytest = ">=7.0"
-pytest-cov = ">=4.0"
-pytest-sugar = ">=1.0"
-
-[tool.poetry.extras]
-markdown = ["markdown"]
+[tool.pdm.dev-dependencies]
+lint = [
+    "invoke>=2.2.0",
+    "ruff>=0.3.5,<0.4.0"
+]
+test = [
+    "markdown>=3.4",
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pytest-sugar>=1.0",
+]
 
 [tool.autopub]
 project-name = "Sitemap"
@@ -94,5 +98,5 @@ force-sort-within-sections = true
 known-first-party = ["pelican"]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"

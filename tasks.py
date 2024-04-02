@@ -18,9 +18,9 @@ VENV = str(VENV_PATH.expanduser())
 BIN_DIR = "bin" if os.name != "nt" else "Scripts"
 VENV_BIN = Path(VENV) / Path(BIN_DIR)
 
-TOOLS = ("poetry", "pre-commit")
-POETRY = which("poetry") if which("poetry") else (VENV_BIN / "poetry")
-CMD_PREFIX = f"{VENV_BIN}/" if ACTIVE_VENV else f"{POETRY} run "
+TOOLS = ("pdm", "pre-commit")
+PDM = which("pdm") if which("pdm") else (VENV_BIN / "pdm")
+CMD_PREFIX = f"{VENV_BIN}/" if ACTIVE_VENV else f"{PDM} run "
 PRECOMMIT = which("pre-commit") if which("pre-commit") else f"{CMD_PREFIX}pre-commit"
 PTY = os.name != "nt"
 
@@ -68,19 +68,19 @@ def precommit(c):
 @task
 def setup(c):
     """Set up the development environment."""
-    if which("poetry") or ACTIVE_VENV:
+    if which("pdm") or ACTIVE_VENV:
         tools(c)
         c.run(f"{CMD_PREFIX}python -m pip install --upgrade pip", pty=PTY)
-        c.run(f"{POETRY} install", pty=PTY)
+        c.run(f"{PDM} update --dev", pty=PTY)
         precommit(c)
         logger.info("\nDevelopment environment should now be set up and ready!\n")
     else:
         error_message = """
-            Poetry is not installed, and there is no active virtual environment available.
+            PDM is not installed, and there is no active virtual environment available.
             You can either manually create and activate a virtual environment, or you can
-            install Poetry via:
+            install PDM via:
 
-            curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+            curl -sSL https://raw.githubusercontent.com/pdm-project/pdm/main/install-pdm.py | python3 -
 
             Once you have taken one of the above two steps, run `invoke setup` again.
             """  # noqa: E501
