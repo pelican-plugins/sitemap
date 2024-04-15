@@ -37,6 +37,8 @@ Funding = "https://donate.getpelican.com/"
 [project.optional-dependencies]
 markdown = ["markdown>=3.4"]
 
+[tool.pdm]
+
 [tool.pdm.dev-dependencies]
 lint = [
     "invoke>=2.2.0",
@@ -48,6 +50,14 @@ test = [
     "pytest-cov>=4.0",
     "pytest-sugar>=1.0",
 ]
+
+[tool.pdm.build]
+source-includes = [
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+]
+includes = ["pelican/"]
+excludes = ["tasks.py"]
 
 [tool.autopub]
 project-name = "Sitemap"
