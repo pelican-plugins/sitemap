@@ -97,6 +97,7 @@ ignore = [
   "D104",    # missing docstring in public package
   "D203",    # blank line before class docstring
   "D213",    # multi-line docstring summary should start at the second line
+  "ISC001",  # avoid implicitly concatenated strings on a single line
   "PLR0912", # too many branches
   "PLR0913", # too many arguments to function call
   "RET505",  # unnecessary `else` after `return` statement
