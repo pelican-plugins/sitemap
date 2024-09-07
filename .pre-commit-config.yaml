@@ -5,7 +5,7 @@ ci:
 # See https://pre-commit.com/hooks.html for info on hooks
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.6.0
     hooks:
       - id: check-added-large-files
       - id: check-ast
@@ -20,12 +20,9 @@ repos:
       - id: forbid-new-submodules
       - id: trailing-whitespace
 
-  - repo: https://github.com/psf/black
-    rev: 23.7.0
-    hooks:
-      - id: black
-
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.277
+    rev: v0.4.0
     hooks:
       - id: ruff
+      - id: ruff-format
+        args: ["--check"]

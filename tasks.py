@@ -18,9 +18,9 @@ VENV = str(VENV_PATH.expanduser())
 BIN_DIR = "bin" if os.name != "nt" else "Scripts"
 VENV_BIN = Path(VENV) / Path(BIN_DIR)
 
-TOOLS = ("poetry", "pre-commit")
-POETRY = which("poetry") if which("poetry") else (VENV_BIN / "poetry")
-CMD_PREFIX = f"{VENV_BIN}/" if ACTIVE_VENV else f"{POETRY} run "
+TOOLS = ("pdm", "pre-commit")
+PDM = which("pdm") if which("pdm") else (VENV_BIN / "pdm")
+CMD_PREFIX = f"{VENV_BIN}/" if ACTIVE_VENV else f"{PDM} run "
 PRECOMMIT = which("pre-commit") if which("pre-commit") else f"{CMD_PREFIX}pre-commit"
 PTY = os.name != "nt"
 
@@ -33,14 +33,16 @@ def tests(c, deprecations=False):
 
 
 @task
-def black(c, check=False, diff=False):
-    """Run Black auto-formatter, optionally with `--check` or `--diff`."""
+def format(c, check=False, diff=False):
+    """Run Ruff's auto-formatter, optionally with `--check` or `--diff`."""
     check_flag, diff_flag = "", ""
     if check:
         check_flag = "--check"
     if diff:
         diff_flag = "--diff"
-    c.run(f"{CMD_PREFIX}black {check_flag} {diff_flag} {PKG_PATH} tasks.py")
+    c.run(
+        f"{CMD_PREFIX}ruff format {check_flag} {diff_flag} {PKG_PATH} tasks.py", pty=PTY
+    )
 
 
 @task
@@ -51,14 +53,14 @@ def ruff(c, fix=False, diff=False):
         fix_flag = "--fix"
     if diff:
         diff_flag = "--diff"
-    c.run(f"{CMD_PREFIX}ruff check {diff_flag} {fix_flag} .")
+    c.run(f"{CMD_PREFIX}ruff check {diff_flag} {fix_flag} .", pty=PTY)
 
 
 @task
 def lint(c, fix=False, diff=False):
     """Check code style via linting tools."""
     ruff(c, fix=fix, diff=diff)
-    black(c, check=(not fix), diff=diff)
+    format(c, check=(not fix), diff=diff)
 
 
 @task
@@ -66,33 +68,33 @@ def tools(c):
     """Install development tools in the virtual environment if not already on PATH."""
     for tool in TOOLS:
         if not which(tool):
-            logger.info(f"** Installing {tool}.")
+            logger.info(f"** Installing {tool} **")
             c.run(f"{CMD_PREFIX}pip install {tool}")
 
 
 @task
 def precommit(c):
     """Install pre-commit hooks to .git/hooks/pre-commit."""
-    logger.info("** Installing pre-commit hooks.")
+    logger.info("** Installing pre-commit hooks **")
     c.run(f"{PRECOMMIT} install")
 
 
 @task
 def setup(c):
     """Set up the development environment."""
-    if which("poetry") or ACTIVE_VENV:
+    if which("pdm") or ACTIVE_VENV:
         tools(c)
-        c.run(f"{CMD_PREFIX}python -m pip install --upgrade pip")
-        c.run(f"{POETRY} install")
+        c.run(f"{CMD_PREFIX}python -m pip install --upgrade pip", pty=PTY)
+        c.run(f"{PDM} update --dev", pty=PTY)
         precommit(c)
         logger.info("\nDevelopment environment should now be set up and ready!\n")
     else:
         error_message = """
-            Poetry is not installed, and there is no active virtual environment available.
+            PDM is not installed, and there is no active virtual environment available.
             You can either manually create and activate a virtual environment, or you can
-            install Poetry via:
+            install PDM via:
 
-            curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+            curl -sSL https://raw.githubusercontent.com/pdm-project/pdm/main/install-pdm.py | python3 -
 
             Once you have taken one of the above two steps, run `invoke setup` again.
             """  # noqa: E501

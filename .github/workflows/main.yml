@@ -7,62 +7,48 @@ env:
 
 jobs:
   test:
-    name: Test - ${{ matrix.python-version }}
+    name: Test - Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Install Poetry
-        run: pipx install poetry
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+      - name: Set up Python ${{ matrix.python-version }} & PDM
+        uses: pdm-project/setup-pdm@v4
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "poetry"
-          cache-dependency-path: "pyproject.toml"
 
       - name: Install dependencies
-        run: |
-          poetry env use "${{ matrix.python-version }}"
-          poetry install --no-interaction
+        run: pdm install
 
       - name: Run tests
-        run: poetry run invoke tests
+        run: pdm run invoke tests
 
   lint:
     name: Lint
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Validate links in Markdown files
         uses: JustinBeckwith/linkinator-action@v1
         with:
           retry: true
 
-      - name: Install Poetry
-        run: pipx install poetry
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Set up Python & PDM
+        uses: pdm-project/setup-pdm@v4
         with:
-          python-version: "3.9"
-          cache: "poetry"
-          cache-dependency-path: "pyproject.toml"
+          python-version: "3.10"
 
       - name: Install dependencies
-        run: |
-          poetry env use "3.9"
-          poetry install --no-interaction
+        run: pdm install
 
       - name: Run linters
-        run: poetry run invoke lint --diff
+        run: pdm run invoke lint --diff
 
   deploy:
     name: Deploy
@@ -76,14 +62,14 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.9"
+          python-version: "3.10"
 
       - name: Check release
         id: check_release
