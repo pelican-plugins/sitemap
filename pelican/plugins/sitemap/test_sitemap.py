@@ -1,3 +1,4 @@
+import importlib.resources
 from pathlib import Path
 from shutil import rmtree
 from tempfile import mkdtemp
@@ -8,7 +9,7 @@ from pelican.settings import read_settings
 
 from . import sitemap
 
-BASE_DIR = Path(__file__).parent
+BASE_DIR = importlib.resources.files(__package__)
 TEST_DATA = BASE_DIR / "test_data"
 
 
