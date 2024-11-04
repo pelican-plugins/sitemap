@@ -3,6 +3,7 @@ Sitemap
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/pelican-plugins/sitemap/main.yml?branch=main)](https://github.com/pelican-plugins/sitemap/actions)
 [![PyPI Version](https://img.shields.io/pypi/v/pelican-sitemap)](https://pypi.org/project/pelican-sitemap/)
+[![Downloads](https://img.shields.io/pypi/dm/pelican-sitemap)](https://pypi.org/project/pelican-sitemap/)
 ![License](https://img.shields.io/pypi/l/pelican-sitemap?color=blue)
 
 This [Pelican][] plugin generates a site map in plain-text or XML format. You can use the `SITEMAP` variable in your settings file to configure the behavior of the plugin.
@@ -13,6 +14,8 @@ Installation
 This plugin can be installed via:
 
     python -m pip install pelican-sitemap
+
+As long as you have not explicitly added a `PLUGINS` setting to your Pelican settings file, then the newly-installed plugin should be automatically detected and enabled. Otherwise, you must add `sitemap` to your existing `PLUGINS` list. For more information, please see the [How to Use Plugins](https://docs.getpelican.com/en/latest/plugins.html#how-to-use-plugins) documentation.
 
 Usage
 -----

@@ -1,0 +1,27 @@
+{
+  "template": "https://github.com/getpelican/cookiecutter-pelican-plugin",
+  "commit": "4e2289f3dce8517c07af48b905d557ea6500b465",
+  "checkout": null,
+  "context": {
+    "cookiecutter": {
+      "plugin_name": "Sitemap",
+      "repo_name": "sitemap",
+      "package_name": "sitemap",
+      "distribution_name": "pelican-sitemap",
+      "version": "1.1.0",
+      "description": "Pelican plugin to generate sitemap in plain-text or XML format",
+      "authors": "{name = \"Pelican Dev Team\", email = \"authors@getpelican.com\"}",
+      "keywords": "\"pelican\", \"plugin\", \"sitemap\"",
+      "readme": "README.md",
+      "contributing": "CONTRIBUTING.md",
+      "license": "GNU Affero General Public License v3|AGPL-3.0",
+      "repo_url": "https://github.com/pelican-plugins/sitemap",
+      "dev_status": "5 - Production/Stable",
+      "tests_exist": true,
+      "python_version": "~=3.9",
+      "pelican_version": ">=4.5",
+      "_template": "https://github.com/getpelican/cookiecutter-pelican-plugin"
+    }
+  },
+  "directory": null
+}

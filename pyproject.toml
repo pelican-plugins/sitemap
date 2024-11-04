@@ -12,19 +12,18 @@ classifiers = [
     "Framework :: Pelican",
     "Framework :: Pelican :: Plugins",
     "Intended Audience :: End Users/Desktop",
-    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Internet :: WWW/HTTP",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-
-requires-python = ">=3.8.1,<4.0"
+requires-python = "~=3.9"
 dependencies = [
     "pelican>=4.5",
 ]
@@ -41,8 +40,8 @@ markdown = ["markdown>=3.4"]
 
 [tool.pdm.dev-dependencies]
 lint = [
-    "invoke>=2.2.0",
-    "ruff>=0.4.1,<0.5.0"
+    "invoke>=2.2",
+    "ruff>=0.7.2,<0.8.0",
 ]
 test = [
     "markdown>=3.4",
@@ -57,7 +56,7 @@ source-includes = [
     "CONTRIBUTING.md",
 ]
 includes = ["pelican/"]
-excludes = ["tasks.py"]
+excludes = ["**/.DS_Store", "**/test_data/**", "tasks.py"]
 
 [tool.autopub]
 project-name = "Sitemap"
