@@ -8,7 +8,7 @@ from pelican.settings import read_settings
 
 from . import sitemap
 
-BASE_DIR = Path(".").resolve()
+BASE_DIR = Path(__file__).parent
 TEST_DATA = BASE_DIR / "test_data"
 
 
@@ -24,6 +24,7 @@ class TestSitemap(unittest.TestCase):
     def _run_pelican(self, sitemap_format):
         settings = read_settings(
             override={
+                "PATH": BASE_DIR,
                 "CACHE_CONTENT": False,
                 "SITEURL": "http://localhost",
                 "CONTENT": TEST_DATA,
