@@ -157,13 +157,13 @@ class SitemapGenerator:
                     else "indexes"
                 )
 
-                # see if changefreq specified in metadata headers, fail back to config
+                # see if changefreq specified in metadata headers; fall back to config
                 changefreq = getattr(obj, "changefreq", changefreqs[content_type])
                 if changefreq not in CHANGEFREQ_VALUES:
                     log.error(f"sitemap: Invalid 'changefreqs' value: {changefreq!r}")
                     changefreq = changefreqs[content_type]
 
-                # see if priority specified in metadata headers, fail back to config
+                # see if priority specified in metadata headers; fall back to config
                 priority_raw = getattr(obj, "priority", priorities[content_type])
                 try:
                     priority = float(priority_raw)
