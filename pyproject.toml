@@ -26,6 +26,7 @@ classifiers = [
 requires-python = "~=3.9"
 dependencies = [
     "pelican>=4.5",
+    "blinker>=1.7,<1.8",  # Temporary pin until upstream fix is released
 ]
 
 [project.urls]
