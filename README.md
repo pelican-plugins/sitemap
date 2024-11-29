@@ -32,7 +32,7 @@ The `SITEMAP` setting must be a Python dictionary and can contain these keys:
 
     - `indexes`, the priority for the URLs of the index pages, such as tags, author pages, categories indexes, archives, etc.
 
-    All the values of this dictionary must be decimal numbers between `0` and `1`.
+    All the values of this dictionary must be decimal floating-point numbers between `0` and `1`, such as `0.3` or `0.7`.
 
 * `changefreqs`, which is a dictionary with three items:
 
