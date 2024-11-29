@@ -25,10 +25,9 @@ class TestSitemap(unittest.TestCase):
     def _run_pelican(self, sitemap_format):
         settings = read_settings(
             override={
-                "PATH": BASE_DIR,
+                "PATH": TEST_DATA,
                 "CACHE_CONTENT": False,
                 "SITEURL": "http://localhost",
-                "CONTENT": TEST_DATA,
                 "OUTPUT_PATH": self.output_path,
                 "PLUGINS": [sitemap],
                 "SITEMAP": {
