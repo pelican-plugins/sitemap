@@ -169,7 +169,8 @@ class SitemapGenerator:
                     priority = float(priority_raw)
                 except ValueError:
                     log.exception(
-                        f"sitemap: Require numeric priority. Got: {priority_raw!r}"
+                        "sitemap: Specify priority as a floating-point number, "
+                        f"not the current value: {priority_raw!r}"
                     )
                     priority = priorities[content_type]
 
