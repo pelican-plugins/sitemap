@@ -1,6 +1,6 @@
 {
   "template": "https://github.com/getpelican/cookiecutter-pelican-plugin",
-  "commit": "4e2289f3dce8517c07af48b905d557ea6500b465",
+  "commit": "21ae5f20cc2dceebd39f838458ce60f77f9e6743",
   "checkout": null,
   "context": {
     "cookiecutter": {
@@ -20,7 +20,8 @@
       "tests_exist": true,
       "python_version": "~=3.9",
       "pelican_version": ">=4.5",
-      "_template": "https://github.com/getpelican/cookiecutter-pelican-plugin"
+      "_template": "https://github.com/getpelican/cookiecutter-pelican-plugin",
+      "_commit": "21ae5f20cc2dceebd39f838458ce60f77f9e6743"
     }
   },
   "directory": null
