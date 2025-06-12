@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+1.2.1 - 2025-06-12
+------------------
+
+- test: Clean up settings overrides
+- chore: Remove Blinker pin after fixed 1.9 release
+- docs: Priority must be specified as floating point
+
+Contributed by [Justin Mayer](https://github.com/justinmayer) via [PR #40](https://github.com/pelican-plugins/sitemap/pull/40/)
+
+
 1.2.0 - 2024-11-05
 ------------------
 
