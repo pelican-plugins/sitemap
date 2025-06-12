@@ -118,4 +118,4 @@ To start contributing to this plugin, review the [Contributing to Pelican][] doc
 License
 -------
 
-This project is licensed under the [AGPL-3.0](http://www.gnu.org/licenses/agpl-3.0-standalone.html) license.
+This project is licensed under the [AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0-standalone.html) license.
