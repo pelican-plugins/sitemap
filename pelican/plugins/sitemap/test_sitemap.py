@@ -54,6 +54,8 @@ http://localhost/tag/foobar.html
 http://localhost/tags.html
 http://localhost/test-post-daily.html
 http://localhost/test-post.html
+http://localhost/translated-post-fr.html
+http://localhost/translated-post.html
 """
         self.assertEqual(expected, contents)
 
@@ -80,3 +82,80 @@ http://localhost/test-post.html
 </url>
 """
         self.assertIn(needle, contents)
+
+    def test_custom_article_url(self):
+        """Test that custom ARTICLE_URL settings are respected in sitemap."""
+        settings = read_settings(
+            override={
+                "PATH": TEST_DATA,
+                "CACHE_CONTENT": False,
+                "SITEURL": "http://localhost",
+                "OUTPUT_PATH": self.output_path,
+                "PLUGINS": [sitemap],
+                "SITEMAP": {
+                    "format": "txt",
+                },
+                # Custom URL settings like a user might have
+                "ARTICLE_URL": "blog/{slug}/",
+                "ARTICLE_SAVE_AS": "{slug}/index.html",
+            }
+        )
+        pelican = Pelican(settings=settings)
+        pelican.run()
+
+        with open(Path(self.output_path) / "sitemap.txt") as fd:
+            contents = fd.read()
+
+        # Articles should use ARTICLE_URL (blog/{slug}/),
+        # not ARTICLE_SAVE_AS ({slug}/index.html)
+        self.assertIn("http://localhost/blog/test-post/", contents)
+        self.assertIn("http://localhost/blog/test-post-daily/", contents)
+        # Should NOT contain the filesystem paths
+        self.assertNotIn("http://localhost/test-post/", contents)
+        self.assertNotIn("http://localhost/test-post-daily/", contents)
+
+    def test_translations_in_sitemap(self):
+        """Test that translation links use trans.url and appear in sitemap."""
+        self._run_pelican(sitemap_format="xml")
+        with open(Path(self.output_path) / "sitemap.xml") as fd:
+            contents = fd.read()
+
+        # Verify translation alternate links exist
+        self.assertIn('<xhtml:link rel="alternate"', contents)
+        # Verify they reference the correct translated article URLs
+        self.assertIn('hreflang="en"', contents)
+        self.assertIn('hreflang="fr"', contents)
+        # Verify translated articles are in the sitemap
+        self.assertIn("http://localhost/translated-post.html", contents)
+        self.assertIn("http://localhost/translated-post-fr.html", contents)
+
+    def test_translations_with_custom_article_url(self):
+        """Test translation links respect custom ARTICLE_URL settings."""
+        settings = read_settings(
+            override={
+                "PATH": TEST_DATA,
+                "CACHE_CONTENT": False,
+                "SITEURL": "http://localhost",
+                "OUTPUT_PATH": self.output_path,
+                "PLUGINS": [sitemap],
+                "SITEMAP": {
+                    "format": "xml",
+                },
+                # Custom URL settings
+                "ARTICLE_URL": "blog/{slug}/",
+                "ARTICLE_SAVE_AS": "{slug}/index.html",
+            }
+        )
+        pelican = Pelican(settings=settings)
+        pelican.run()
+
+        with open(Path(self.output_path) / "sitemap.xml") as fd:
+            contents = fd.read()
+
+        # Verify translation link for English uses custom ARTICLE_URL
+        self.assertIn(
+            'ref="http://localhost/blog/translated-post/"', contents
+        )
+        # Verify the French translation is also in sitemap
+        # (French uses ARTICLE_LANG_URL which defaults differently)
+        self.assertIn("translated-post-fr", contents)

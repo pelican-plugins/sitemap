@@ -130,7 +130,14 @@ class SitemapGenerator:
                 or any(re.search(pattern, url) for pattern in excluded)
             )
 
-        page_queue = [(clean_url(to_url(path)), obj) for path, obj in self.page_queue]
+        # Use obj.url for articles/pages to respect custom URL settings
+        # (e.g., ARTICLE_URL). Fall back to to_url(path) for index pages
+        # (archives, tags, etc.) which don't have a .url property as they're
+        # not Article or Page objects.
+        page_queue = [
+            (clean_url(obj.url if obj else to_url(path)), obj)
+            for path, obj in self.page_queue
+        ]
         page_queue = [page for page in page_queue if not is_excluded(page)]
         page_queue.sort(key=lambda i: i[0])
 
@@ -174,12 +181,12 @@ class SitemapGenerator:
                     )
                     priority = priorities[content_type]
 
+                # Use trans.url to respect custom URL settings for translations too
                 translations = "".join(
                     XML_TRANSLATION.format(
                         trans.lang,
                         siteurl,
-                        # save_as path is already output-relative
-                        clean_url(pathname2url(trans.save_as)),
+                        clean_url(trans.url),
                     )
                     for trans in getattr(obj, "translations", ())
                 )
