@@ -48,6 +48,7 @@ http://localhost/archives.html
 http://localhost/authors.html
 http://localhost/categories.html
 http://localhost/category/test.html
+http://localhost/pages/about-us.html
 http://localhost/tag/bar.html
 http://localhost/tag/foo.html
 http://localhost/tag/foobar.html
@@ -153,9 +154,36 @@ http://localhost/translated-post.html
             contents = fd.read()
 
         # Verify translation link for English uses custom ARTICLE_URL
-        self.assertIn(
-            'ref="http://localhost/blog/translated-post/"', contents
-        )
+        self.assertIn('ref="http://localhost/blog/translated-post/"', contents)
         # Verify the French translation is also in sitemap
         # (French uses ARTICLE_LANG_URL which defaults differently)
         self.assertIn("translated-post-fr", contents)
+
+    def test_custom_page_url(self):
+        """Test that custom PAGE_URL settings are respected in sitemap."""
+        settings = read_settings(
+            override={
+                "PATH": TEST_DATA,
+                "CACHE_CONTENT": False,
+                "SITEURL": "http://localhost",
+                "OUTPUT_PATH": self.output_path,
+                "PLUGINS": [sitemap],
+                "SITEMAP": {
+                    "format": "txt",
+                },
+                # Custom URL settings for pages
+                "PAGE_URL": "pages/{slug}/",
+                "PAGE_SAVE_AS": "p/{slug}/index.html",
+            }
+        )
+        pelican = Pelican(settings=settings)
+        pelican.run()
+
+        with open(Path(self.output_path) / "sitemap.txt") as fd:
+            contents = fd.read()
+
+        # Pages should use PAGE_URL (pages/{slug}/),
+        # not PAGE_SAVE_AS (p/{slug}/index.html)
+        self.assertIn("http://localhost/pages/about-us/", contents)
+        # Should NOT contain the filesystem path
+        self.assertNotIn("http://localhost/p/about-us/", contents)
