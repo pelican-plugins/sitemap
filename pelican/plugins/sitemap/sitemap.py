@@ -1,6 +1,6 @@
 """The Sitemap plugin generates plain-text or XML sitemaps."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 import os.path
 import re
@@ -36,14 +36,11 @@ XML_FOOTER = """
 """
 
 
-def format_date(date):
-    """Format the date in the expected format."""
-    if date.tzinfo:
-        tz = date.strftime("%z")
-        tz = tz[:-2] + ":" + tz[-2:]
-    else:
-        tz = "-00:00"
-    return date.strftime("%Y-%m-%dT%H:%M:%S") + tz
+def format_date(date_time):
+    """Format the datetime in the expected format."""
+    if date_time.tzinfo is None:
+        date_time = date_time.replace(tzinfo=timezone.utc)
+    return date_time.isoformat(timespec="seconds")
 
 
 CHANGEFREQ_DEFAULTS = {

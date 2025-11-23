@@ -3,6 +3,7 @@ from pathlib import Path
 from shutil import rmtree
 from tempfile import mkdtemp
 import unittest
+from xml.etree import ElementTree as ET
 
 from pelican import Pelican
 from pelican.settings import read_settings
@@ -64,6 +65,12 @@ http://localhost/translated-post.html
         self._run_pelican(sitemap_format="xml")
         with open(Path(self.output_path) / "sitemap.xml") as fd:
             contents = fd.read()
+
+        xml_root = ET.fromstring(contents)
+        localhost_element = xml_root[0]
+        lastmod = localhost_element[1].text
+        assert lastmod.endswith("+00:00")
+
         needle = """\
 <url>
 <loc>http://localhost/test-post.html</loc>
