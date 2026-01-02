@@ -187,3 +187,134 @@ http://localhost/translated-post.html
         self.assertIn("http://localhost/pages/about-us/", contents)
         # Should NOT contain the filesystem path
         self.assertNotIn("http://localhost/p/about-us/", contents)
+
+
+class TestSitemapUrlNormalization(unittest.TestCase):
+    """Test URL normalization in sitemap (handles ../ from i18n_subsites)."""
+
+    def setUp(self):
+        self.output_path = mkdtemp(prefix="pelican-plugins-sitemap-norm-tests-")
+
+    def tearDown(self):
+        rmtree(self.output_path)
+
+    def test_translations_use_obj_url_not_relative(self):
+        """Test that translation URLs use obj.url (full path) not relative."""
+        settings = read_settings(
+            override={
+                "PATH": TEST_DATA,
+                "CACHE_CONTENT": False,
+                "SITEURL": "http://localhost",
+                "OUTPUT_PATH": self.output_path,
+                "PLUGINS": [sitemap],
+                "SITEMAP": {
+                    "format": "xml",
+                },
+            }
+        )
+        pelican = Pelican(settings=settings)
+        pelican.run()
+
+        with open(Path(self.output_path) / "sitemap.xml") as fd:
+            contents = fd.read()
+
+        # No relative path segments should appear in URLs
+        self.assertNotIn("/../", contents)
+        self.assertNotIn('href="../', contents)
+        # All hrefs should be absolute URLs
+        import re
+        hrefs = re.findall(r'href="([^"]+)"', contents)
+        for href in hrefs:
+            self.assertTrue(
+                href.startswith("http://") or href.startswith("https://"),
+                f"href should be absolute URL, got: {href}"
+            )
+
+    def test_all_locs_are_absolute_urls(self):
+        """Test that all <loc> entries are absolute URLs."""
+        settings = read_settings(
+            override={
+                "PATH": TEST_DATA,
+                "CACHE_CONTENT": False,
+                "SITEURL": "http://localhost",
+                "OUTPUT_PATH": self.output_path,
+                "PLUGINS": [sitemap],
+                "SITEMAP": {
+                    "format": "xml",
+                },
+            }
+        )
+        pelican = Pelican(settings=settings)
+        pelican.run()
+
+        with open(Path(self.output_path) / "sitemap.xml") as fd:
+            contents = fd.read()
+
+        import re
+        locs = re.findall(r'<loc>([^<]+)</loc>', contents)
+        for loc in locs:
+            self.assertTrue(
+                loc.startswith("http://") or loc.startswith("https://"),
+                f"<loc> should be absolute URL, got: {loc}"
+            )
+            self.assertNotIn("/../", loc, f"<loc> should not contain /../: {loc}")
+
+    def test_bidirectional_hreflang_links(self):
+        """Test that hreflang links are bidirectional (each URL links to all variants)."""
+        settings = read_settings(
+            override={
+                "PATH": TEST_DATA,
+                "CACHE_CONTENT": False,
+                "SITEURL": "http://localhost",
+                "OUTPUT_PATH": self.output_path,
+                "PLUGINS": [sitemap],
+                "SITEMAP": {
+                    "format": "xml",
+                },
+            }
+        )
+        pelican = Pelican(settings=settings)
+        pelican.run()
+
+        with open(Path(self.output_path) / "sitemap.xml") as fd:
+            contents = fd.read()
+
+        # For translated content, both en and fr should appear as hreflang
+        # Each translated URL entry should link to BOTH language variants
+        import re
+        url_blocks = re.findall(r'<url>(.*?)</url>', contents, re.DOTALL)
+
+        translated_blocks = [b for b in url_blocks if 'xhtml:link' in b]
+        for block in translated_blocks:
+            # Each translated entry should have links to both languages
+            self.assertIn('hreflang="en"', block)
+            self.assertIn('hreflang="fr"', block)
+
+    def test_no_duplicate_loc_entries(self):
+        """Test that each URL appears only once as <loc>."""
+        settings = read_settings(
+            override={
+                "PATH": TEST_DATA,
+                "CACHE_CONTENT": False,
+                "SITEURL": "http://localhost",
+                "OUTPUT_PATH": self.output_path,
+                "PLUGINS": [sitemap],
+                "SITEMAP": {
+                    "format": "xml",
+                },
+            }
+        )
+        pelican = Pelican(settings=settings)
+        pelican.run()
+
+        with open(Path(self.output_path) / "sitemap.xml") as fd:
+            contents = fd.read()
+
+        import re
+        locs = re.findall(r'<loc>([^<]+)</loc>', contents)
+        # Check for duplicates
+        seen = set()
+        for loc in locs:
+            self.assertNotIn(loc, seen, f"Duplicate <loc> found: {loc}")
+            seen.add(loc)
+

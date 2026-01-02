@@ -1,2 +1,4 @@
 .pdm-python
 pdm.lock
+
+__pycache__/

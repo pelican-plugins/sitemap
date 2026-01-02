@@ -3,7 +3,9 @@
 from datetime import datetime
 import logging
 import os.path
+import posixpath
 import re
+from urllib.parse import urlparse, urlunparse
 from urllib.request import pathname2url
 
 from pelican import contents, signals
@@ -17,19 +19,17 @@ xmlns:xhtml="http://www.w3.org/1999/xhtml"
 xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 """
 
-TXT_URL = "{0}/{1}\n"
+TXT_URL = "{0}\n"
 
-XML_URL = """
-<url>
-<loc>{0}/{1}</loc>
-<lastmod>{2}</lastmod>
-<changefreq>{3}</changefreq>
-<priority>{4}</priority>
-{translations}</url>
+XML_URL = """<url>
+<loc>{0}</loc>
+<lastmod>{1}</lastmod>
+<changefreq>{2}</changefreq>
+<priority>{3}</priority>
+{4}</url>
 """
 
-XML_TRANSLATION = """<xhtml:link rel="alternate" hreflang="{}" ref="{}/{}"/>
-"""
+XML_TRANSLATION = """<xhtml:link rel="alternate" hreflang="{0}" href="{1}"/>"""
 
 XML_FOOTER = """
 </urlset>
@@ -75,17 +75,24 @@ class SitemapGenerator:
         self.now = datetime.now()
         self.page_queue = []
         self._main_pelican = None
+        self._main_siteurl = None
+        self._main_lang = None
 
     def init(self, pelican):
         """Initialize the plugin."""
         log.debug("sitemap: Initialize")
         if self._main_pelican is None:
             self._main_pelican = pelican
+            self._main_siteurl = pelican.settings.get("SITEURL", "")
+            self._main_lang = pelican.settings.get("DEFAULT_LANG", "en")
 
     def queue_page(self, path, context):
         """Queue one site page for later generation."""
         obj = context.get("article") or context.get("page")
-        self.page_queue.append((path, obj))
+        # Store the current language context along with the page
+        current_lang = context.get("DEFAULT_LANG", self._main_lang)
+        current_siteurl = context.get("SITEURL", self._main_siteurl)
+        self.page_queue.append((path, obj, current_lang, current_siteurl))
 
     def finalize(self, pelican):
         """Write the sitemap of queued pages."""
@@ -95,6 +102,8 @@ class SitemapGenerator:
             self._write_out(pelican)
             # Reset for autoreload
             self._main_pelican = None
+            self._main_siteurl = None
+            self._main_lang = None
             self.page_queue = []
 
     def _write_out(self, pelican):
@@ -119,9 +128,8 @@ class SitemapGenerator:
             # Strip trailing 'index.html'
             return re.sub(r"(?:^|(?<=/))index.html$", "", url)
 
-        def is_excluded(item):
+        def is_excluded(url, obj):
             nonlocal excluded
-            url, obj = item
             is_private = getattr(obj, "private", "") == "True"
             is_hidden = getattr(obj, "status", "published") != "published"
             return (
@@ -130,25 +138,93 @@ class SitemapGenerator:
                 or any(re.search(pattern, url) for pattern in excluded)
             )
 
-        # Use obj.url for articles/pages to respect custom URL settings
-        # (e.g., ARTICLE_URL). Fall back to to_url(path) for index pages
-        # (archives, tags, etc.) which don't have a .url property as they're
-        # not Article or Page objects.
-        page_queue = [
-            (clean_url(obj.url if obj else to_url(path)), obj)
-            for path, obj in self.page_queue
-        ]
-        page_queue = [page for page in page_queue if not is_excluded(page)]
-        page_queue.sort(key=lambda i: i[0])
+        def get_full_url(page_siteurl, page_url, is_index=False):
+            """Build full URL and normalize any ../ segments."""
+            if page_url.startswith("http"):
+                return page_url
+            base = siteurl if is_index else page_siteurl
+            full = "{0}/{1}".format(base.rstrip("/"), page_url.lstrip("/"))
+            # Normalize path using posixpath (handles ../ segments)
+            parsed = urlparse(full)
+            normalized = posixpath.normpath(parsed.path)
+            # Restore trailing slash if original had one
+            if parsed.path.endswith("/") and not normalized.endswith("/"):
+                normalized += "/"
+            return urlunparse(parsed._replace(path=normalized))
+
+        def add_to_url_map(url_map, slug_translations, path, obj, lang, page_siteurl):
+            """Add a page to the URL map and track slug translations."""
+            if obj is None:
+                # Index pages - no translations
+                page_url = clean_url(to_url(path))
+                if any(re.search(pattern, page_url) for pattern in excluded):
+                    return
+                full_url = get_full_url(page_siteurl, page_url, is_index=True)
+                if full_url not in url_map:
+                    url_map[full_url] = {"obj": None, "slug": None, "translations": {}}
+                return
+
+            # Articles and pages
+            page_url = clean_url(obj.url)
+            if is_excluded(page_url, obj):
+                return
+            full_url = get_full_url(page_siteurl, page_url)
+            slug = getattr(obj, "slug", None)
+            obj_lang = getattr(obj, "lang", lang)
+            if full_url not in url_map:
+                url_map[full_url] = {"obj": obj, "slug": slug, "translations": {}}
+            # Group by slug for i18n_subsites
+            if slug:
+                slug_translations.setdefault(slug, {})[obj_lang] = full_url
+
+        def link_translations(url_map, slug_translations):
+            """Link translations to each URL entry."""
+            for full_url, data in url_map.items():
+                obj = data["obj"]
+                slug = data["slug"]
+                translations = {}
+                # Add translations from slug grouping (i18n_subsites)
+                if slug in slug_translations:
+                    translations.update(slug_translations[slug])
+                # Add translations from Pelican's native translation mechanism
+                if obj is not None:
+                    obj_lang = getattr(obj, "lang", None)
+                    if obj_lang:
+                        translations[obj_lang] = full_url
+                    for trans in getattr(obj, "translations", []):
+                        trans_lang = getattr(trans, "lang", None)
+                        trans_url = clean_url(trans.url)
+                        if trans_lang and trans_url:
+                            translations[trans_lang] = get_full_url(siteurl, trans_url)
+                data["translations"] = translations
+
+        # Build URL map and group translations by slug
+        url_map = {}  # full_url -> {obj, slug, translations}
+        slug_translations = {}  # slug -> {lang: full_url}
+
+        for path, obj, lang, page_siteurl in self.page_queue:
+            add_to_url_map(url_map, slug_translations, path, obj, lang, page_siteurl)
+
+        link_translations(url_map, slug_translations)
+
+        def format_hreflang(translations):
+            if len(translations) <= 1:
+                return ""
+            lines = []
+            for lang, url in sorted(translations.items()):
+                lines.append(XML_TRANSLATION.format(lang, url))
+            return "\n".join(lines)
 
         with open(filename, "w", encoding="utf-8") as fd:
             if is_xml:
                 fd.write(XML_HEADER)
 
-            for pageurl, obj in page_queue:
+            for full_url in sorted(url_map.keys()):
+                data = url_map[full_url]
+                obj = data["obj"]
+
                 if not is_xml:
-                    fd.write(siteurl + "/" + pageurl + "\n")
-                    # That's it for txt. Short circuit the loop, gain an indent level.
+                    fd.write(full_url + "\n")
                     continue
 
                 lastmod = format_date(
@@ -165,42 +241,27 @@ class SitemapGenerator:
                 )
 
                 # see if changefreq specified in metadata headers; fall back to config
-                changefreq = getattr(obj, "changefreq", changefreqs[content_type])
+                changefreq = getattr(obj, "changefreq", changefreqs[content_type]) if obj else changefreqs[content_type]
                 if changefreq not in CHANGEFREQ_VALUES:
                     log.error(f"sitemap: Invalid 'changefreqs' value: {changefreq!r}")
                     changefreq = changefreqs[content_type]
 
                 # see if priority specified in metadata headers; fall back to config
-                priority_raw = getattr(obj, "priority", priorities[content_type])
+                priority_raw = getattr(obj, "priority", priorities[content_type]) if obj else priorities[content_type]
                 try:
                     priority = float(priority_raw)
                 except ValueError:
                     log.exception(
-                        "sitemap: Specify priority as a floating-point number, "
+                        f"sitemap: Specify priority as a floating-point number, "
                         f"not the current value: {priority_raw!r}"
                     )
                     priority = priorities[content_type]
 
-                # Use trans.url to respect custom URL settings for translations too
-                translations = "".join(
-                    XML_TRANSLATION.format(
-                        trans.lang,
-                        siteurl,
-                        clean_url(trans.url),
-                    )
-                    for trans in getattr(obj, "translations", ())
-                )
+                hreflang = format_hreflang(data["translations"])
 
-                fd.write(
-                    XML_URL.format(
-                        siteurl,
-                        pageurl,
-                        lastmod,
-                        changefreq,
-                        priority,
-                        translations=translations,
-                    )
-                )
+                fd.write(XML_URL.format(
+                    full_url, lastmod, changefreq, priority, hreflang
+                ))
 
             if is_xml:
                 fd.write(XML_FOOTER)
