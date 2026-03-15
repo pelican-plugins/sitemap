@@ -139,6 +139,11 @@ class SitemapGenerator:
             for path, obj in self.page_queue
         ]
         page_queue = [page for page in page_queue if not is_excluded(page)]
+
+        # Remove duplicate entries which might be caused by pelican-redirect plugin
+        page_queue = list(set(page_queue))
+
+        # Sorting the pages after removing duplicates guarantees the correct order
         page_queue.sort(key=lambda i: i[0])
 
         with open(filename, "w", encoding="utf-8") as fd:
