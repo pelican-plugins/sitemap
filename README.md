@@ -50,7 +50,7 @@ The `SITEMAP` setting must be a Python dictionary and can contain these keys:
 SITEMAP = {
     "exclude": [
         "^404.html",  # starts with "404.html", matches "https://example.com/404.html"
-        "/tags/",     # contains "/tags/", matches "https://example.com/tags/" as well
+        "tags/",      # contains "tags/", matches "https://example.com/tags/" as well
                       #   as "https://example.com/tags/ham-and-bacon/"
         "\.json$",    # ends with ".json", matches "https://example.com/ham/eggs.json"
     ]
